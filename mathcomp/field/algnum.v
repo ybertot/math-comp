@@ -44,7 +44,7 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-Import GRing.Theory Num.Theory.
+Import GRing.Theory Num.Theory ArchimedeanTheory.
 Local Open Scope ring_scope.
 
 Local Notation ZtoQ := (intr : int -> rat).
@@ -58,6 +58,9 @@ Local Notation pQtoC := (map_poly ratr).
 
 Local Hint Resolve (@intr_inj _ : injective ZtoC).
 Local Notation QtoCm := [rmorphism of QtoC].
+
+Local Notation Cint := (@Cint [numArchiDomainType of algC]).
+Local Notation Cnat := (@Cnat [numArchiDomainType of algC]).
 
 (* Number fields and rational spans. *)
 Lemma algC_PET (s : seq algC) :

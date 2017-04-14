@@ -2,7 +2,7 @@
 (* Distributed under the terms of CeCILL-B.                                  *)
 Require Import mathcomp.ssreflect.ssreflect.
 From mathcomp
-Require Import ssrfun ssrbool eqtype ssrnat choice seq.
+Require Import ssrfun ssrbool eqtype ssrnat choice seq div.
 From mathcomp
 Require Import fintype finfun bigop ssralg ssrnum poly.
 Import GRing.Theory Num.Theory.
@@ -1741,9 +1741,44 @@ Proof. by rewrite -[p *~ n]mulrzl -mul_polyC polyC_mulrz polyC1. Qed.
 
 End PolyZintOIdom.
 
+(* for Znat to be defined as a Cnat *)
+
+Module intArchimedean.
+Section intArchimedean.
+
+Fact archimedean_axiomz : Num.archimedean_axiom int_numDomainType.
+Proof. by move=> x; exists (absz x).+1; rewrite natz ltz_nat ltnSn. Qed.
+
+End intArchimedean.
+End intArchimedean.
+
+Canonical int_numArchiDomain := 
+  Eval hnf in NumArchiDomainType int intArchimedean.archimedean_axiomz.
+Canonical int_realArchiDomain :=
+  Eval hnf in [realArchiDomainType of int].
+
 Section ZnatPred.
 
-Definition Znat := [qualify a n : int | 0 <= n].
+Definition Znat := (@Cnat int_numArchiDomain).
+Fact Znat_key : pred_key Znat. by []. Qed.
+Canonical Znat_keyd := KeyedQualifier Znat_key.
+
+Lemma ZnatP (m : int) : reflect (exists n : nat, m = n) (m \is a Znat).
+Proof. 
+by apply: (iffP (CnatP m)) => [[n ->] | [n ->]]; exists n; rewrite natz.
+Qed.
+
+Lemma Znat_semiring_closed : semiring_closed Znat.
+Proof. by apply: (Cnat_semiring int_numArchiDomain). Qed.
+Canonical Znat_addrPred := AddrPred Znat_semiring_closed.
+Canonical Znat_mulrPred := MulrPred Znat_semiring_closed.
+Canonical Znat_semiringPred := SemiringPred Znat_semiring_closed.
+
+Lemma Znat_def n : (n \is a Znat) = (0 <= n).
+Proof. by case: n => [n | //]; rewrite le0z_nat; apply/ZnatP; exists n. Qed.
+
+(* old version *)
+(*Definition Znat := [qualify a n : int | 0 <= n].
 Fact Znat_key : pred_key Znat. by []. Qed.
 Canonical Znat_keyd := KeyedQualifier Znat_key.
 
@@ -1756,7 +1791,7 @@ Canonical Znat_mulrPred := MulrPred Znat_semiring_closed.
 Canonical Znat_semiringPred := SemiringPred Znat_semiring_closed.
 
 Lemma ZnatP (m : int) : reflect (exists n : nat, m = n) (m \is a Znat).
-Proof. by apply: (iffP idP) => [|[n -> //]]; case: m => // n; exists n. Qed.
+Proof. by apply: (iffP idP) => [|[n -> //]]; case: m => // n; exists n. Qed. *)
 
 End ZnatPred.
 
@@ -1784,3 +1819,594 @@ Lemma rpredXsign R S (divS : @divrPred R S) (kS : keyed_pred divS) n x :
 Proof. by rewrite -signr_odd; case: (odd n); rewrite ?rpredV. Qed.
 
 End rpred.
+
+Module ArchimedeanTheory.
+
+Section NumArchiDomainTheory.
+
+Variable R : numArchiDomainType.
+
+Local Notation Cnat := (@Cnat R).
+Local Notation Creal := (@Num.real R).
+Local Notation ZtoC := (intr : int -> R).
+
+Fact floorC_subproof x : {m | x \is Creal -> ZtoC m <= x < ZtoC (m + 1)}.
+Proof.
+have [Rx | _] := boolP (x \is Creal); last by exists 0.
+without loss x_ge0: x Rx / x >= 0.
+  have [x_ge0 | /ltrW x_le0] := real_ger0P Rx; first exact.
+  case/(_ (- x)) => [||m /(_ isT)]; rewrite ?rpredN ?oppr_ge0 //.
+  rewrite ler_oppr ltr_oppl -!rmorphN opprD /= ltr_neqAle ler_eqVlt.
+  case: eqP => [-> _ | _ /and3P[lt_x_m _ le_m_x]].
+    by exists (- m) => _; rewrite lerr rmorphD ltr_addl ltr01.
+  by exists (- m - 1); rewrite le_m_x subrK.
+exists (Posz (truncC x)) => _ ; rewrite addrC -intS -!natz !mulrz_nat.
+exact: (truncC_itv x_ge0).
+Qed.
+
+Definition floorC x := sval (floorC_subproof x).
+Definition Cint := [qualify a x : R | (floorC x)%:~R == x].
+
+Fact Cint_key : pred_key Cint. Proof. by []. Qed.
+Canonical Cint_keyed := KeyedQualifier Cint_key.
+
+Lemma floorC_itv x : x \is Creal -> (floorC x)%:~R <= x < (floorC x + 1)%:~R.
+Proof. by rewrite /floorC => Rx; case: (floorC_subproof x) => //= m; apply. Qed.
+
+Lemma floorC_def x m : m%:~R <= x < (m + 1)%:~R -> floorC x = m.
+Proof.
+case/andP=> lemx ltxm1; apply/eqP; rewrite eqr_le -!ltz_addr1.
+have /floorC_itv/andP[lefx ltxf1]: x \is Creal.
+  by rewrite -[x](subrK m%:~R) rpredD ?realz ?ler_sub_real.
+by rewrite -!(ltr_int R) 2?(@ler_lt_trans _ x).
+Qed.
+
+Lemma intCK : cancel intr floorC.
+Proof.
+by move=> m; apply: floorC_def; rewrite ler_int ltr_int ltz_addr1 lerr.
+Qed.
+
+Lemma floorCK : {in Cint, cancel floorC intr}. Proof. by move=> z /eqP. Qed.
+
+Lemma floorC0 : floorC 0 = 0. Proof. exact: (intCK 0). Qed.
+Lemma floorC1 : floorC 1 = 1. Proof. exact: (intCK 1). Qed.
+Hint Resolve floorC0 floorC1.
+
+Lemma floorCpK (p : {poly R}) :
+  p \is a polyOver Cint -> map_poly intr (map_poly floorC p) = p.
+Proof.
+move/(all_nthP 0)=> Zp; apply/polyP=> i.
+rewrite coef_map coef_map_id0 //= -[p]coefK coef_poly.
+by case: ifP => [/Zp/floorCK // | _]; rewrite floorC0.
+Qed.
+
+Lemma floorCpP (p : {poly R}) :
+  p \is a polyOver Cint -> {q | p = map_poly intr q}.
+Proof. by exists (map_poly floorC p); rewrite floorCpK. Qed.
+
+Lemma Cint_int m : m%:~R \is a Cint.
+Proof. by rewrite unfold_in intCK. Qed.
+
+Lemma CintP x : reflect (exists m, x = m%:~R) (x \is a Cint).
+Proof.
+by apply: (iffP idP) => [/eqP<-|[m ->]]; [exists (floorC x) | apply: Cint_int].
+Qed.
+
+Lemma floorCD : {in Cint & Creal, {morph floorC : x y / x + y}}.
+Proof.
+move=> _ y /CintP[m ->] Ry; apply: floorC_def.
+by rewrite -addrA 2!rmorphD /= intCK ler_add2l ltr_add2l floorC_itv.
+Qed.
+
+Lemma floorCN : {in Cint, {morph floorC : x / - x}}.
+Proof. by move=> _ /CintP[m ->]; rewrite -rmorphN !intCK. Qed.
+
+Lemma floorCM : {in Cint &, {morph floorC : x y / x * y}}.
+Proof. by move=> _ _ /CintP[m1 ->] /CintP[m2 ->]; rewrite -rmorphM !intCK. Qed.
+
+Lemma floorCX n : {in Cint, {morph floorC : x / x ^+ n}}.
+Proof. by move=> _ /CintP[m ->]; rewrite -rmorphX !intCK. Qed.
+
+Lemma rpred_Cint S (ringS : subringPred S) (kS : keyed_pred ringS) x :
+  x \is a Cint -> x \in kS.
+Proof. by case/CintP=> m ->; apply: rpred_int. Qed.
+
+Lemma Cint0 : 0 \is a Cint. Proof. exact: (Cint_int 0). Qed.
+Lemma Cint1 : 1 \is a Cint. Proof. exact: (Cint_int 1). Qed.
+Hint Resolve Cint0 Cint1.
+
+Fact Cint_subring : subring_closed Cint.
+Proof.
+by split=> // _ _ /CintP[m ->] /CintP[p ->];
+    rewrite -(rmorphB, rmorphM) Cint_int.
+Qed.
+Canonical Cint_opprPred := OpprPred Cint_subring.
+Canonical Cint_addrPred := AddrPred Cint_subring.
+Canonical Cint_mulrPred := MulrPred Cint_subring.
+Canonical Cint_zmodPred := ZmodPred Cint_subring.
+Canonical Cint_semiringPred := SemiringPred Cint_subring.
+Canonical Cint_smulrPred := SmulrPred Cint_subring.
+Canonical Cint_subringPred := SubringPred Cint_subring.
+
+Lemma Creal_Cint : {subset Cint <= Creal}.
+Proof. by move=> _ /CintP[m ->]; apply: realz. Qed.
+
+Lemma Cint_normK x : x \is a Cint -> `|x| ^+ 2 = x ^+ 2.
+Proof. by move/Creal_Cint/real_normK. Qed.
+
+Lemma CintEsign x : x \is a Cint -> x = (-1) ^+ (x < 0)%R * `|x|.
+Proof. by move/Creal_Cint/realEsign. Qed.
+
+(* Relating Cint and Cnat. *)
+
+Lemma Cint_Cnat : {subset Cnat <= Cint}.
+Proof. by move=> _ /CnatP[n ->]; rewrite pmulrn Cint_int. Qed.
+
+Lemma CintE x : (x \is a Cint) = (x \is a Cnat) || (- x \is a Cnat).
+Proof.
+apply/idP/idP=> [/CintP[[n | n] ->] | ]; first by rewrite Cnat_nat.
+  by rewrite NegzE opprK Cnat_nat orbT.
+by case/pred2P=> [<- | /(canLR (@opprK _)) <-]; rewrite ?rpredN rpred_nat.
+Qed.
+
+Lemma Cnat_norm_Cint x : x \is a Cint -> `|x| \is a Cnat.
+Proof.
+case/CintP=> [m ->]; rewrite [m]intEsign rmorphM rmorph_sign.
+by rewrite normrM normr_sign mul1r normr_nat rpred_nat.
+Qed.
+
+Lemma CnatEint x : (x \is a Cnat) = (x \is a Cint) && (0 <= x).
+Proof.
+apply/idP/andP=> [Nx | [Zx x_ge0]]; first by rewrite Cint_Cnat ?Cnat_ge0.
+by rewrite -(ger0_norm x_ge0) Cnat_norm_Cint.
+Qed.
+
+Lemma CintEge0 x : 0 <= x -> (x \is a Cint) = (x \is a Cnat).
+Proof. by rewrite CnatEint andbC => ->. Qed.
+
+Lemma Cnat_exp_even x n : ~~ odd n -> x \is a Cint -> x ^+ n \is a Cnat.
+Proof.
+move=> n_oddF x_Cint; rewrite CnatEint; apply/andP; split.
+  by apply: (rpredX _ x_Cint).
+by apply: (real_exprn_even_ge0 (Creal_Cint x_Cint) n_oddF).
+Qed.
+
+Lemma norm_Cint_ge1 x : x \is a Cint -> x != 0 -> 1 <= `|x|.
+Proof.
+rewrite -normr_eq0 => /Cnat_norm_Cint/CnatP[n ->].
+by rewrite pnatr_eq0 ler1n lt0n.
+Qed.
+
+Lemma sqr_Cint_ge1 x : x \is a Cint -> x != 0 -> 1 <= x ^+ 2.
+Proof.
+by move=> Zx nz_x; rewrite -Cint_normK // expr_ge1 ?normr_ge0 ?norm_Cint_ge1.
+Qed.
+
+Lemma Cint_ler_sqr x : x \is a Cint -> x <= x ^+ 2.
+Proof.
+move=> Zx; have [-> | nz_x] := eqVneq x 0; first by rewrite expr0n.
+apply: ler_trans (_ : `|x| <= _); first by rewrite real_ler_norm ?Creal_Cint.
+by rewrite -Cint_normK // ler_eexpr // norm_Cint_ge1.
+Qed.
+
+(* Relating Cnat and oldCnat. *)
+
+Lemma truncC_old x : (truncC x = if (0 <= x) then `|floorC x|%N else 0%N).
+Proof.
+case: ifP => [x_ge0 | x_ge0F]; last by rewrite /truncC; apply: ifF.
+have /andP [fl_ler lt_fl] : (`|floorC x|%N)%:R <= x < (`|floorC x|%N).+1%:R.
+  have /andP[lemx ltxm1] := floorC_itv (ger0_real x_ge0).
+  rewrite -addn1 !pmulrn PoszD gez0_abs ?lemx //.
+  by rewrite -ltz_addr1 -(ltr_int R) (ler_lt_trans x_ge0).
+have /andP [tr_ler lt_tr] := (truncC_itv x_ge0).
+apply/eqP; rewrite eqn_leq; apply/andP.
+do 2?[rewrite -ltnS -(ltr_nat R)]; split.
+  by apply: (ler_lt_trans tr_ler lt_fl).
+by apply: (ler_lt_trans fl_ler lt_tr).
+Qed.
+
+(* predCmod *)
+Variables (U V : lmodType R) (f : {additive U -> V}).
+
+Lemma raddfZ_Cint a u : a \is a Cint -> f (a *: u) = a *: f u. 
+Proof. by case/CintP=> m ->; rewrite !scaler_int raddfMz. Qed.
+
+Lemma rpredZ_Cint S (subS : @zmodPred V S) (kS : keyed_pred subS) :
+  {in Cint & kS, forall z u, z *: u \in kS}.
+Proof. by move=> _ u /CintP[m ->]; apply: rpredZint. Qed.
+
+(* autC *)
+Implicit Type nu : {rmorphism R -> R}.
+
+Lemma aut_Cint nu : {in Cint, nu =1 id}.
+Proof. by move=> _ /CintP[m ->]; apply: rmorph_int. Qed.
+
+End NumArchiDomainTheory.
+
+Hint Resolve floorC0 floorC1 Cint_int Cint0 Cint1.
+Implicit Arguments intCK [R].
+Implicit Arguments Cint [R].
+Implicit Arguments floorC [R].
+
+Section NumArchiFieldTheory.
+
+Variable R : numArchiFieldType.
+
+(* autLmodC *)
+Implicit Type nu : {rmorphism R -> R}.
+
+Local Notation Cint := (@Cint R).
+
+Lemma Cint_aut nu x : (nu x \is a Cint) = (x \is a Cint).
+Proof. by rewrite !CintE -rmorphN !Cnat_aut. Qed.
+
+End NumArchiFieldTheory.
+
+Section NumArchiClosedFieldTheory.
+
+Variable R : numArchiClosedFieldType.
+
+Implicit Type x : R.
+
+Local Notation Cint := (@ArchimedeanTheory.Cint R).
+
+Lemma conj_Cint x : x \is a Cint -> x^* = x.
+Proof. by move/Creal_Cint/conj_Creal. Qed.
+
+End NumArchiClosedFieldTheory.
+
+
+(* 
+Section ArchiDivTheory.
+
+
+Variable R : numArchiFieldType.
+Local Notation Cint := (@ArchimedeanTheory.Cint R).
+
+Implicit Type x y z : R.
+
+Definition int_divisor m := m%:~R : R.
+Definition nat_divisor n := n%:R : R.
+
+
+
+
+Structure coercible_to :=
+CoercibleTo {
+  coercible_sort :> Type;
+  coercion : coercible_sort -> R
+}.
+
+Canonical nat_coercible_to := CoercibleTo nat_divisor.
+Canonical int_coercible_to := CoercibleTo int_divisor.
+Canonical R_coercible_to := CoercibleTo idfun.
+
+Definition dvdC {T : coercible_to}  {T' : coercible_to} (x : T) : pred_class :=
+   fun y : T' => if coercion x == 0 then coercion y == 0 else coercion y / coercion x \is a Cint.
+
+Lemma nCdivE (p : nat) : coercion p = p%:R :> R. Proof. by []. Qed.
+Lemma zCdivE (p : int) : coercion p = p%:~R :> R. Proof. by []. Qed.
+
+(*
+Definition dvdC (x : R) : pred_class :=
+   fun y : R => if x == 0 then y == 0 else y / x \is a Cint.
+Coercion int_divisor : int >-> Num.NumArchiField.sort.
+Coercion nat_divisor : nat >-> Num.NumArchiField.sort.
+
+Lemma nCdivE (p : nat) : p = p%:R :> R. Proof. by []. Qed.
+Lemma zCdivE (p : int) : p = p%:~R :> R. Proof. by []. Qed.
+*)
+
+
+
+
+Definition CdivE := (nCdivE, zCdivE).
+
+Delimit Scope C_scope with C.
+Notation "x %| y" := (in_mem y (mem (dvdC x))) : C_scope.
+
+Definition eqCmod (e x y : R) := (e %| x - y)%C.
+
+Notation "x == y %[mod e ]" := (eqCmod e x y) : C_scope.
+Notation "x != y %[mod e ]" := (~~ (x == y %[mod e])%C) : C_scope.
+
+Lemma dvdCP x y : reflect (exists2 z, z \is a Cint & y = z * x) (x %| y)%C.
+Proof.
+rewrite unfold_in /=.
+
+ have [-> | nz_x] := altP eqP.
+  by apply: (iffP eqP) => [-> | [z _ ->]]; first exists 0; rewrite ?mulr0 ?Cint0 .
+apply: (iffP idP) => [Zyx | [z Zz ->] /=]; last by rewrite mulfK.
+by exists (y / x); rewrite ?divfK.
+Qed.
+
+Lemma dvdCP_nat x y : 0 <= x -> 0 <= y -> (x %| y)%C -> {n | y = n%:R * x}.
+Proof.
+move=> x_ge0 y_ge0 x_dv_y; apply: sig_eqW.
+case/dvdCP: x_dv_y => z Zz -> in y_ge0 *; move: x_ge0 y_ge0 Zz.
+rewrite ler_eqVlt => /predU1P[<- | ]; first by exists 22; rewrite !mulr0.
+by move=> /pmulr_lge0-> /CintEge0-> /CnatP[n ->]; exists n.
+Qed.
+
+Lemma dvdC_mull x y z : y \is a Cint -> (x %| z)%C -> (x %| y * z)%C.
+Proof.
+move=> Zy /dvdCP[m Zm ->]; apply/dvdCP.
+by exists (y * m); rewrite ?mulrA ?rpredM.
+Qed.
+
+Lemma dvdC_mulr x y z : y \is a Cint -> (x %| z)%C -> (x %| z * y)%C.
+Proof. by rewrite mulrC; apply: dvdC_mull. Qed.
+
+Lemma dvdC_mul2r x y z : y != 0 -> (x * y %| z * y)%C = (x %| z)%C.
+Proof.
+move=> nz_y; rewrite !unfold_in !(mulIr_eq0 _ (mulIf nz_y)).
+by rewrite mulrAC invfM mulrA divfK.
+Qed.
+
+Lemma dvdC_mul2l x y z : y != 0 -> (y * x %| y * z)%C = (x %| z)%C.
+Proof. by rewrite !(mulrC y); apply: dvdC_mul2r. Qed.
+
+Lemma dvdC_trans x y z : (x %| y)%C -> (y %| z)%C -> (x %| z)%C.
+Proof. by move=> x_dv_y /dvdCP[m Zm ->]; apply: dvdC_mull. Qed.
+
+Lemma dvdC_refl x : (x %| x)%C.
+Proof. by apply/dvdCP; exists 1; rewrite ?mul1r ?Cint1. Qed.
+Hint Resolve dvdC_refl.
+
+Lemma dvdC_nat (p n : nat) : (p %| n)%C = (p %| n)%N.
+Proof.
+rewrite unfold_in CintEge0 ?divr_ge0 ?invr_ge0 ?ler0n // !pnatr_eq0.
+have [-> | nz_p] := altP eqP; first by rewrite dvd0n.
+apply/CnatP/dvdnP=> [[q def_q] | [q ->]]; exists q.
+  by apply/eqP; rewrite -(eqr_nat R) natrM -def_q divfK ?pnatr_eq0. 
+by rewrite [num in num / _]natrM mulfK ?pnatr_eq0.
+Qed.
+
+About pred_key.
+About dvdC.
+
+Definition dvdC_predC (T : coercible_to) (T' : coercible_to) (x : T) : predPredType R :=
+  (@dvdC T T' x).
+
+Fact dvdC_key x : (@pred_key R (dvdC x)). Proof. by []. Qed.
+Print GRing.zmod_closed.
+Lemma dvdC_zmod x : zmod_closed (dvdC x).
+Proof.
+split=> [| _ _ /dvdCP[y Zy ->] /dvdCP[z Zz ->]]; first exact: dvdC0.
+by rewrite -mulrBl dvdC_mull ?rpredB.
+Qed.
+Canonical dvdC_keyed x := KeyedPred (dvdC_key x).
+Canonical dvdC_opprPred x := OpprPred (dvdC_zmod x).
+Canonical dvdC_addrPred x := AddrPred (dvdC_zmod x).
+Canonical dvdC_zmodPred x := ZmodPred (dvdC_zmod x).
+
+About pred_key.
+
+End ArchiDivTheory.
+
+Section ArchiDivTheorybis.
+
+Variable R : numArchiClosedFieldType.
+
+
+Local Notation Cint := (@ArchimedeanTheory.Cint R).
+
+
+About nat_divisor.
+About idfun.
+
+Canonical R_archiField_coercible_to := @CoercibleTo (Num.NumArchiClosedField.numArchiFieldType R) _ idfun.
+
+Local Notation "x %| y" := (in_mem y (mem (dvdC x))).
+
+About R_archiField_coercible_to.
+About R_coercible_to.
+
+Check (dvdC 0%N (0 : R)).
+
+
+
+Lemma dvdCP (x : R) (y : R) : reflect (exists2 z, z \is a Cint & y = z * x) (x %| y).
+
+
+
+
+
+Lemma dvdC0 x : (x %| (0 : R))%C.
+Proof. by apply/dvdCP; exists 0; rewrite ?mul0r ?Cint0. Qed.
+
+Lemma dvd0C x : (0 %| x)%C = (x == 0).
+Proof. by rewrite unfold_in eqxx. Qed.
+
+Lemma dvdC_int (p : nat) x : x \is a Cint -> (p %| x)%C = (p %| `|floorC x|)%N.
+Proof.
+move=> Zx; rewrite -{1}(floorCK Zx) {1}[floorC x]intEsign.
+rewrite rmorphMsign rpredMsign dvdC_nat.
+Qed.
+
+
+
+
+
+
+Variable divisor : numArchiDomainType.
+Local Notation C := divisor.
+
+(* Integer divisibility. *)
+
+Definition int_divisor m := m%:~R : divisor.
+Definition nat_divisor n := n%:R : divisor.
+Definition C_divisor x := x : divisor.
+
+
+
+Coercion nat_divisor : nat >-> divisor.
+Coercion int_divisor : int >-> C.
+Coercion C_divisor : C >-> divisor.
+
+Lemma nCdivE (p : nat) : p = p%:R :> divisor. Proof. by []. Qed.
+Lemma zCdivE (p : int) : p = p%:~R :> divisor. Proof. by []. Qed.
+Definition CdivE := (nCdivE, zCdivE).
+
+Definition dvdC (x : divisor) : pred_class :=
+   fun y : algC => if x == 0 then y == 0 else y / x \is a Cint.
+Notation "x %| y" := (y \in dvdC x) : C_expanded_scope.
+Notation "x %| y" := (@in_mem divisor y (mem (dvdC x))) : C_scope.
+
+Definition eqCmod (e x y : divisor) := (e %| x - y)%C.
+
+Notation "x == y %[mod e ]" := (eqCmod e x y) : C_scope.
+Notation "x != y %[mod e ]" := (~~ (x == y %[mod e])%C) : C_scope.
+
+Lemma dvdCP x y : reflect (exists2 z, z \is a Cint & y = z * x) (x %| y)%C.
+Proof.
+rewrite unfold_in; have [-> | nz_x] := altP eqP.
+  by apply: (iffP eqP) => [-> | [z _ ->]]; first exists 0; rewrite ?mulr0.
+apply: (iffP idP) => [Zyx | [z Zz ->]]; last by rewrite mulfK.
+by exists (y / x); rewrite ?divfK.
+Qed.
+
+Lemma dvdCP_nat x y : 0 <= x -> 0 <= y -> (x %| y)%C -> {n | y = n%:R * x}.
+Proof.
+move=> x_ge0 y_ge0 x_dv_y; apply: sig_eqW.
+case/dvdCP: x_dv_y => z Zz -> in y_ge0 *; move: x_ge0 y_ge0 Zz.
+rewrite ler_eqVlt => /predU1P[<- | ]; first by exists 22; rewrite !mulr0.
+by move=> /pmulr_lge0-> /CintEge0-> /CnatP[n ->]; exists n.
+Qed.
+
+Lemma dvdC0 x : (x %| 0)%C.
+Proof. by apply/dvdCP; exists 0; rewrite ?mul0r. Qed.
+
+Lemma dvd0C x : (0 %| x)%C = (x == 0).
+Proof. by rewrite unfold_in eqxx. Qed.
+
+Lemma dvdC_mull x y z : y \is a Cint -> (x %| z)%C -> (x %| y * z)%C.
+Proof.
+move=> Zy /dvdCP[m Zm ->]; apply/dvdCP.
+by exists (y * m); rewrite ?mulrA ?rpredM.
+Qed.
+
+Lemma dvdC_mulr x y z : y \is a Cint -> (x %| z)%C -> (x %| z * y)%C.
+Proof. by rewrite mulrC; apply: dvdC_mull. Qed.
+
+Lemma dvdC_mul2r x y z : y != 0 -> (x * y %| z * y)%C = (x %| z)%C.
+Proof.
+move=> nz_y; rewrite !unfold_in !(mulIr_eq0 _ (mulIf nz_y)).
+by rewrite mulrAC invfM mulrA divfK.
+Qed.
+
+Lemma dvdC_mul2l x y z : y != 0 -> (y * x %| y * z)%C = (x %| z)%C.
+Proof. by rewrite !(mulrC y); apply: dvdC_mul2r. Qed.
+
+Lemma dvdC_trans x y z : (x %| y)%C -> (y %| z)%C -> (x %| z)%C.
+Proof. by move=> x_dv_y /dvdCP[m Zm ->]; apply: dvdC_mull. Qed.
+
+Lemma dvdC_refl x : (x %| x)%C.
+Proof. by apply/dvdCP; exists 1; rewrite ?mul1r. Qed.
+Hint Resolve dvdC_refl.
+
+Fact dvdC_key x : pred_key (dvdC x). Proof. by []. Qed.
+Lemma dvdC_zmod x : zmod_closed (dvdC x).
+Proof.
+split=> [| _ _ /dvdCP[y Zy ->] /dvdCP[z Zz ->]]; first exact: dvdC0.
+by rewrite -mulrBl dvdC_mull ?rpredB.
+Qed.
+Canonical dvdC_keyed x := KeyedPred (dvdC_key x).
+Canonical dvdC_opprPred x := OpprPred (dvdC_zmod x).
+Canonical dvdC_addrPred x := AddrPred (dvdC_zmod x).
+Canonical dvdC_zmodPred x := ZmodPred (dvdC_zmod x).
+
+Lemma dvdC_nat (p n : nat) : (p %| n)%C = (p %| n)%N.
+Proof.
+rewrite unfold_in CintEge0 ?divr_ge0 ?invr_ge0 ?ler0n // !pnatr_eq0.
+have [-> | nz_p] := altP eqP; first by rewrite dvd0n.
+apply/CnatP/dvdnP=> [[q def_q] | [q ->]]; exists q.
+  by apply/eqP; rewrite -eqC_nat natrM -def_q divfK ?pnatr_eq0. 
+by rewrite [num in num / _]natrM mulfK ?pnatr_eq0.
+Qed.
+
+Lemma dvdC_int (p : nat) x : x \is a Cint -> (p %| x)%C = (p %| `|floorC x|)%N.
+Proof.
+move=> Zx; rewrite -{1}(floorCK Zx) {1}[floorC x]intEsign.
+by rewrite rmorphMsign rpredMsign dvdC_nat.
+Qed.
+
+(* Elementary modular arithmetic. *)
+
+Lemma eqCmod_refl e x : (x == x %[mod e])%C.
+Proof. by rewrite /eqCmod subrr rpred0. Qed.
+
+Lemma eqCmodm0 e : (e == 0 %[mod e])%C. Proof. by rewrite /eqCmod subr0. Qed.
+Hint Resolve eqCmod_refl eqCmodm0.
+
+Lemma eqCmod0 e x : (x == 0 %[mod e])%C = (e %| x)%C.
+Proof. by rewrite /eqCmod subr0. Qed.
+
+Lemma eqCmod_sym e x y : ((x == y %[mod e]) = (y == x %[mod e]))%C.
+Proof. by rewrite /eqCmod -opprB rpredN. Qed.
+
+Lemma eqCmod_trans e y x z :
+  (x == y %[mod e] -> y == z %[mod e] -> x == z %[mod e])%C.
+Proof. by move=> Exy Eyz; rewrite /eqCmod -[x](subrK y) -addrA rpredD. Qed.
+
+Lemma eqCmod_transl e x y z :
+  (x == y %[mod e])%C -> (x == z %[mod e])%C = (y == z %[mod e])%C.
+Proof. by move/(sym_left_transitive (eqCmod_sym e) (@eqCmod_trans e)). Qed.
+
+Lemma eqCmod_transr e x y z :
+  (x == y %[mod e])%C -> (z == x %[mod e])%C = (z == y %[mod e])%C.
+Proof. by move/(sym_right_transitive (eqCmod_sym e) (@eqCmod_trans e)). Qed.
+
+Lemma eqCmodN e x y : (- x == y %[mod e])%C = (x == - y %[mod e])%C.
+Proof. by rewrite eqCmod_sym /eqCmod !opprK addrC. Qed.
+
+Lemma eqCmodDr e x y z : (y + x == z + x %[mod e])%C = (y == z %[mod e])%C.
+Proof. by rewrite /eqCmod addrAC opprD !addrA subrK. Qed.
+
+Lemma eqCmodDl e x y z : (x + y == x + z %[mod e])%C = (y == z %[mod e])%C.
+Proof. by rewrite !(addrC x) eqCmodDr. Qed.
+
+Lemma eqCmodD e x1 x2 y1 y2 :
+  (x1 == x2 %[mod e] -> y1 == y2 %[mod e] -> x1 + y1 == x2 + y2 %[mod e])%C.
+Proof.
+by rewrite -(eqCmodDl e x2 y1) -(eqCmodDr e y1); apply: eqCmod_trans.
+Qed.
+
+Lemma eqCmod_nat (e m n : nat) : (m == n %[mod e])%C = (m == n %[mod e]).
+Proof.
+without loss lenm: m n / (n <= m)%N.
+  by move=> IH; case/orP: (leq_total m n) => /IH //; rewrite eqCmod_sym eq_sym.
+by rewrite /eqCmod -natrB // dvdC_nat eqn_mod_dvd.
+Qed.
+
+Lemma eqCmod0_nat (e m : nat) : (m == 0 %[mod e])%C = (e %| m)%N.
+Proof. by rewrite eqCmod0 dvdC_nat. Qed.
+
+Lemma eqCmodMr e :
+  {in Cint, forall z x y, x == y %[mod e] -> x * z == y * z %[mod e]}%C.
+Proof. by move=> z Zz x y; rewrite /eqCmod -mulrBl => /dvdC_mulr->. Qed.
+
+Lemma eqCmodMl e :
+  {in Cint, forall z x y, x == y %[mod e] -> z * x == z * y %[mod e]}%C.
+Proof. by move=> z Zz x y Exy; rewrite !(mulrC z) eqCmodMr. Qed.
+
+Lemma eqCmodMl0 e : {in Cint, forall x, x * e == 0 %[mod e]}%C.
+Proof. by move=> x Zx; rewrite -(mulr0 x) eqCmodMl. Qed.
+
+Lemma eqCmodMr0 e : {in Cint, forall x, e * x == 0 %[mod e]}%C.
+Proof. by move=> x Zx; rewrite /= mulrC eqCmodMl0. Qed.
+
+Lemma eqCmod_addl_mul e : {in Cint, forall x y, x * e + y == y %[mod e]}%C.
+Proof. by move=> x Zx y; rewrite -{2}[y]add0r eqCmodDr eqCmodMl0. Qed.
+
+Lemma eqCmodM e : {in Cint & Cint, forall x1 y2 x2 y1,
+  x1 == x2 %[mod e] -> y1 == y2 %[mod e] -> x1 * y1 == x2 * y2 %[mod e]}%C.
+Proof.
+move=> x1 y2 Zx1 Zy2 x2 y1 eq_x /(eqCmodMl Zx1)/eqCmod_trans-> //.
+exact: eqCmodMr.
+Qed.
+
+End ArchiDivTheory.
+*)
+
+End ArchimedeanTheory.

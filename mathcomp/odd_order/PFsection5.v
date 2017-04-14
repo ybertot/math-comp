@@ -53,7 +53,7 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-Import GroupScope GRing.Theory Num.Theory.
+Import GroupScope GRing.Theory Num.Theory ArchimedeanTheory.
 Local Open Scope ring_scope.
 
 (* Results about the set of induced irreducible characters *)
@@ -1260,7 +1260,7 @@ have dotD: {in S1 chi1 &, forall xi1 xi2, '[D xi1, D xi2] = N%:R + '[xi1, xi2]}.
   by rewrite 2?oSS // 1?eq_sym // opprB !subr0.
 have /R_P[ZRchi oRchi defRchi] := Schi1.
 have szRchi: size (R chi1) = (N + N)%N.
-  apply: (can_inj natCK); rewrite -cfnorm_orthonormal // -defRchi.
+  apply: (can_inj (@natCK [numArchiDomainType of algC])); rewrite -cfnorm_orthonormal // -defRchi.
   by rewrite dotD ?inE ?ccS ?(hasPn nrS) // cfnorm_conjC defN -natrD.
 pose subRchi1 X := exists2 E, subseq E (R chi1) & X = \sum_(a <- E) a.
 pose Xspec X := [/\ X \in 'Z[R chi1], '[X] = N%:R & subRchi1 X].

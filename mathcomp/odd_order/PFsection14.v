@@ -18,7 +18,7 @@ Require Import BGsection1 BGsection3 BGsection7.
 From mathcomp
 Require Import BGsection14 BGsection15 BGsection16 BGappendixC.
 From mathcomp
-Require Import ssrnum rat algC cyclotomic algnum.
+Require Import ssrnum ssrint rat algC cyclotomic algnum.
 From mathcomp
 Require Import classfun character integral_char inertia vcharacter.
 From mathcomp
@@ -37,7 +37,7 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-Import GroupScope GRing.Theory FinRing.Theory Num.Theory.
+Import GroupScope GRing.Theory Num.Theory ArchimedeanTheory FinRing.Theory.
 
 Section Fourteen.
 
@@ -132,17 +132,17 @@ have frobPU: [Frobenius PU = P ><| U].
   rewrite mulr1 -[_ * _]fJ ?mem_quotient //= qactE ?dom_qactJ //=.
   by rewrite conjgE cxy mulKg.
 have pP: p.-group P by have [_ [/andP[]]] := FTtypeP_facts _ StypeP.
-have{p_g}[y [a P1a cagy]]: exists y, exists2 a, a \in P^# & g ^ y \in 'C[a].
+have{p_g}[y [a P1a cagy]]: exists y, exists2 a, a \in P^# & (g ^ y)%g \in 'C[a].
   have sylP: p.-Sylow(G) P.
     have [/Hall_pi/= hallP _ _] := FTcore_facts maxS; apply: etrans hallP.
     have [_ _ [n ->]] := pgroup_pdiv pP (mmax_Fcore_neq1 maxS).
     by apply/eq_pHall => r1; rewrite pi_of_exp ?pi_of_prime.
   have [y _ Pa] := Sylow_Jsub sylP (subsetT _) (p_elt_constt p g).
-  pose a := g.`_p ^ y; have{Pa} Pa: a \in P by rewrite -cycle_subG cycleJ.
+  pose a := (g.`_p ^ y)%g; have{Pa} Pa: a \in P by rewrite -cycle_subG cycleJ.
   exists y, a; last by rewrite cent1C /a conjXg groupX ?cent1id.
   rewrite !inE conjg_eq1 (contraNneq _ p_g) // => /constt1P/p'nat_coprime-> //.
   exact: pnat_id.
-have /(mem_sdprod defS)[x [w [PUx W1w Dgy _]]]: g ^ y \in S.
+have /(mem_sdprod defS)[x [w [PUx W1w Dgy _]]]: (g ^ y)%g \in S.
   have A0a: a \in 'A0(S) := subsetP (Fcore_sub_FTsupp0 maxS) a P1a.
   have [_ _ _ _ [tiA0 _]] := FTtypeP_facts _ StypeP.
   by rewrite (subsetP (cent1_normedTI tiA0 A0a)) // 2!inE.
@@ -151,7 +151,7 @@ suffices w_eq1: w = 1%g.
   rewrite -[g](conjgK y) mem_imset2 ?inE //= conjg_eq1 ntg /=.
   by rewrite (subsetP sCaP) // inE cagy Dgy w_eq1 mulg1 PUx.
 apply: contraNeq W'g => ntw; have nPUw := subsetP nPUW1 w W1w.
-have{x PUx Dgy} /imset2P[x z W2w_x _ Dgy]: g ^ y \in class_support (W2 :* w) PU.
+have{x PUx Dgy} /imset2P[x z W2w_x _ Dgy]: (g ^ y)%g \in class_support (W2 :* w) PU.
   rewrite -(regPUW1 w) ?inE ?ntw // class_supportEr -cover_imset.
   have coPUw := coprime_dvdr (order_dvdG W1w) coPUq.
   have [/cover_partition-> _] := partition_cent_rcoset nPUw coPUw.

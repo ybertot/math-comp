@@ -77,6 +77,7 @@ Import GroupScope GRing.Theory Num.Theory.
 Local Open Scope ring_scope.
 
 Local Notation algCF := [fieldType of algC].
+Local Notation algAD := [numArchiDomainType of algC].
 
 Section AlgC.
 
@@ -834,7 +835,7 @@ Implicit Types (phi chi xi : 'CF(G)) (i : Iirr G).
 
 Lemma irr_char i : 'chi_i \is a character.
 Proof.
-by apply/forallP=> j; rewrite (tnth_nth 0) coord_free ?irr_free ?isNatC_nat.
+by apply/forallP=> j; rewrite (tnth_nth 0) coord_free ?irr_free ?Cnat_nat.
 Qed.
 
 Lemma cfun1_char : (1 : 'CF(G)) \is a character.
@@ -855,7 +856,7 @@ Lemma char_sum_irrP {phi} :
 Proof.
 apply: (iffP idP)=> [/forallP-Nphi | [n ->]]; last first.
   by apply: rpred_sum => i _; rewrite scaler_nat rpredMn // irr_char.
-do [have [a ->] := cfun_irr_sum phi] in Nphi *; exists (truncC \o a).
+do [have [a ->] := cfun_irr_sum phi] in Nphi *; exists (@truncC _ \o a).
 apply: eq_bigr => i _; congr (_ *: _); have:= eqP (Nphi i).
 by rewrite eq_sum_nth_irr coord_sum_free ?irr_free.
 Qed.
@@ -1091,8 +1092,8 @@ Lemma irr_repr_lin_char (i : Iirr G) x :
   irr_repr (socle_of_Iirr i) x = ('chi_i x)%:M.
 Proof.
 move=> Gx CFi; rewrite -irrRepr cfunE Gx.
-move: (_ x); rewrite -[irr_degree _]natCK -irr1_degree lin_char1 //.
-by rewrite (natCK 1) => A; rewrite trace_mx11 -mx11_scalar.
+move: (_ x); rewrite -[irr_degree _](@natCK algAD) -irr1_degree lin_char1 //.
+by rewrite (natCK 1%N) => A; rewrite trace_mx11 -mx11_scalar.
 Qed.
 
 Fact linear_char_key B : pred_key (@linear_char B). Proof. by []. Qed.
@@ -1405,7 +1406,7 @@ apply/irrP/andP=> [[i ->] | [Nchi]]; first by rewrite irr_char cfnorm_irr.
 rewrite cfdot_sum_irr => /eqP/Cnat_sum_eq1[i _| i [_ ci1 cj0]].
   by rewrite rpredM // ?conj_Cnat ?Cnat_cfdot_char_irr.
 exists i; rewrite [chi]cfun_sum_cfdot (bigD1 i) //=.
-rewrite -(@normr_idP _ _ (@Cnat_ge0 _ (Cnat_cfdot_char_irr i Nchi))).
+rewrite -(@normr_idP _ _ (@Cnat_ge0 _ _ (Cnat_cfdot_char_irr i Nchi))).
 rewrite normC_def {}ci1 sqrtC1 scale1r big1 ?addr0 // => j neq_ji.
 by rewrite (('[_] =P 0) _) ?scale0r // -normr_eq0 normC_def cj0 ?sqrtC0.
 Qed.
@@ -1523,7 +1524,7 @@ exists (chi - 'chi_i); last by rewrite addrC subrK.
 apply/forallP=> j; rewrite coord_cfdot cfdotBl cfdot_irr.
 have [<- | _] := eqP; last by rewrite subr0 Cnat_cfdot_char_irr.
 have := i_in_chi; rewrite inE /= -(eqP (Cnat_cfdot_char_irr i Nchi)) pnatr_eq0.
-by case: (truncC _) => // n _; rewrite mulrSr addrK ?isNatC_nat.
+by case: (truncC _) => // n _; rewrite mulrSr addrK ?Cnat_nat.
 Qed.
 
 Lemma cfun_sum_constt (phi : 'CF(G)) :
@@ -2036,7 +2037,7 @@ Proof. by rewrite dprod_IirrE /cfDprod irr0 rmorph1 mul1r. Qed.
 
 Lemma dprod_Iirr_inj : injective dprod_Iirr.
 Proof.
-move=> [i1 j1] [i2 j2] /eqP; rewrite -[_ == _]oddb -(natCK (_ == _)).
+move=> [i1 j1] [i2 j2] /eqP; rewrite -[_ == _]oddb -(@natCK algAD (_ == _)).
 rewrite -cfdot_irr !dprod_IirrE cfdot_dprod !cfdot_irr -natrM mulnb.
 by rewrite natCK oddb -xpair_eqE => /eqP.
 Qed.

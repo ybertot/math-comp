@@ -10,13 +10,13 @@ Require Import fingroup morphism perm automorphism quotient action finalg zmodp.
 From mathcomp
 Require Import gfunctor gproduct cyclic commutator gseries nilpotent pgroup.
 From mathcomp
-Require Import sylow hall abelian maximal frobenius.
+Require Import sylow hall abelian maximal frobenius ssrnum.
 From mathcomp
 Require Import matrix mxalgebra mxrepresentation mxabelem vector.
 From mathcomp
 Require Import BGsection1 BGsection3 BGsection7 BGsection15 BGsection16.
 From mathcomp
-Require Import ssrnum algC classfun character integral_char inertia vcharacter.
+Require Import ssrint algC classfun character integral_char inertia vcharacter.
 From mathcomp
 Require Import PFsection1 PFsection2 PFsection3 PFsection4.
 From mathcomp
@@ -48,7 +48,7 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-Import GroupScope GRing.Theory Num.Theory.
+Import GroupScope GRing.Theory Num.Theory ArchimedeanTheory.
 
 Section Ten.
 

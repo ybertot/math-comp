@@ -12,7 +12,7 @@ Require Import gfunctor gproduct cyclic pgroup commutator nilpotent frobenius.
 From mathcomp
 Require Import matrix mxalgebra mxrepresentation BGsection3 vector.
 From mathcomp
-Require Import ssrnum algC classfun character inertia vcharacter.
+Require Import ssrnum ssrint algC classfun character inertia vcharacter.
 From mathcomp
 Require Import PFsection1 PFsection2 PFsection4 PFsection5 PFsection6.
 
@@ -29,7 +29,7 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-Import GroupScope GRing.Theory Num.Theory.
+Import GroupScope GRing.Theory Num.Theory ArchimedeanTheory.
 Local Open Scope ring_scope.
 
 Reserved Notation "alpha ^\rho" (at level 2, format "alpha ^\rho").

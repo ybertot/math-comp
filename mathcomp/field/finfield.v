@@ -572,7 +572,7 @@ End FinFieldExists.
 
 Section FinDomain.
 
-Import ssrnum ssrint algC cyclotomic Num.Theory.
+Import ssrnum ssrint ArchimedeanTheory Num.Theory algC cyclotomic.
 Local Infix "%|" := dvdn. (* Hide polynomial divisibility. *)
 
 Variable R : finUnitRingType.
@@ -642,7 +642,7 @@ suffices: `|aq n| <= (q - 1)%:R.
   elim/big_ind: _ => // [|d _]; first exact: mulr_ege1.
   rewrite !hornerE; apply: ler_trans (ler_sub_dist _ _).
   by rewrite normr_nat normrX n1z expr1n ler_subr_addl (leC_nat 2).
-have Zaq d: d %| n -> aq d \in Cint.
+have Zaq d: d %| n -> aq d \is a Cint.
   move/(dvdn_prim_root z_prim)=> zd_prim.
   rewrite rpred_horner ?rpred_nat //= -Cintr_Cyclotomic //.
   by apply/polyOverP=> i; rewrite coef_map ?rpred_int.

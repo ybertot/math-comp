@@ -14,7 +14,7 @@ Require Import vector falgebra fieldext ssrnum algC rat algnum galois.
 From mathcomp
 Require Import classfun character inertia integral_char vcharacter.
 From mathcomp
-Require ssrint.
+Require Import ssrint.
 
 (******************************************************************************)
 (* This file covers Peterfalvi, Section 1: Preliminary results.               *)
@@ -24,10 +24,11 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-Import GroupScope GRing.Theory Num.Theory.
+Import GroupScope GRing.Theory Num.Theory ArchimedeanTheory.
 Local Open Scope ring_scope.
 
 Local Notation algCF := [fieldType of algC].
+Local Notation algAD := [numArchiDomainType of algC].
 
 Section Main.
 
@@ -179,10 +180,10 @@ move=> /= Hjk; wlog ->: eps n m / eps = false.
   by apply: IH; rewrite // -opprB cfdotNl (nm_ji, nm_ki) opprK.
 rewrite !cfdotBl !cfdotBr !cfdot_irr !opprB addrAC addrA.
 do 2!move/(canRL (subrK _)); rewrite -(natrD _ 1) -!natrD.
-move/(can_inj natCK); case: (m == i) => //.
+move/(can_inj (@natCK algAD)); case: (m == i) => //.
 case: eqP => // ->; case: (j == i) => // _.
 rewrite subr0 add0r => /(canRL (subrK _)); rewrite -(natrD _ 1).
-by move/(can_inj natCK); rewrite (negbTE Hjk).
+by move/(can_inj (@natCK algAD)); rewrite (negbTE Hjk).
 Qed.
 
 (* This is Peterfalvi (1.4). *)

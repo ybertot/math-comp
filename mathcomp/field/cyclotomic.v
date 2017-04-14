@@ -28,7 +28,7 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-Import GRing.Theory Num.Theory.
+Import GRing.Theory Num.Theory ArchimedeanTheory.
 Local Open Scope ring_scope.
 
 Section CyclotomicPoly.
@@ -122,6 +122,10 @@ Local Notation pZtoQ := (map_poly ZtoQ).
 Local Notation pZtoC := (map_poly ZtoC).
 Local Notation pQtoC := (map_poly ratr).
 
+Local Notation algC_archD := [numArchiDomainType of algC].
+Local Notation floorC := (@ArchimedeanTheory.floorC algC_archD).
+Local Notation intCK := (@intCK algC_archD).
+
 Local Hint Resolve (@intr_inj [numDomainType of algC]).
 Local Notation QtoC_M := (ratr_rmorphism [numFieldType of algC]).
 
@@ -148,7 +152,7 @@ Notation "''Phi_' n" := (Cyclotomic n)
 Lemma Cyclotomic_monic n : 'Phi_n \is monic.
 Proof.
 rewrite /'Phi_n; case: (C_prim_root_exists _) => z /= _.
-rewrite monicE lead_coefE coef_map_id0 ?(int_algC_K 0) ?getCint0 //.
+rewrite monicE lead_coefE coef_map_id0 ?(int_algC_K 0) ?getCint0 ?floorC0 //.
 by rewrite size_poly_eq -lead_coefE (monicP (cyclotomic_monic _ _)) (intCK 1).
 Qed.
 
@@ -211,7 +215,7 @@ Qed.
 Lemma Cyclotomic0 : 'Phi_0 = 1.
 Proof.
 rewrite /'Phi_0; case: (C_prim_root_exists _) => z /= _.
-by rewrite -[1]polyseqK /cyclotomic big_ord0 map_polyE !polyseq1 /= (intCK 1).
+by rewrite -[1]polyseqK /cyclotomic big_ord0 map_polyE !polyseq1 /= floorC1.
 Qed.
 
 Lemma size_Cyclotomic n : size 'Phi_n = (totient n).+1.

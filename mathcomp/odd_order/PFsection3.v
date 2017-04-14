@@ -12,7 +12,7 @@ Require Import gfunctor center gproduct cyclic pgroup abelian frobenius.
 From mathcomp
 Require Import mxalgebra mxrepresentation vector falgebra fieldext galois.
 From mathcomp
-Require Import ssrnum rat algC algnum classfun character.
+Require Import ssrnum ssrint rat algC algnum classfun character.
 From mathcomp
 Require Import integral_char inertia vcharacter.
 From mathcomp
@@ -63,7 +63,7 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-Import GroupScope GRing.Theory Num.Theory.
+Import GroupScope GRing.Theory Num.Theory ArchimedeanTheory. 
 Local Open Scope ring_scope.
 
 Section Definitions.

@@ -31,7 +31,7 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-Import GroupScope GRing.Theory FinRing.Theory Num.Theory.
+Import GroupScope GRing.Theory FinRing.Theory Num.Theory ArchimedeanTheory.
 
 Section Eleven.
 
@@ -901,7 +901,7 @@ have tau_alpha i: tau (alpha_ i j) = eta_ i j - eta_ i 0 - n *: zeta1.
     have S1gt0: (0 < size S1)%N by case: (S1) S1zeta.
     have: n * b ^+ 2 <= n *+ 3.
       have: 2%:R + n <= n *+ 3 by rewrite addrC ler_add2l ler_muln2r Dn ler1n.
-      apply: ler_trans; rewrite sqrrB1 -mulr_natr -mulrBr mulrDr mulrA mulr1.
+      apply: ler_trans; rewrite sqrrB1 -mulr_natr -mulrBr (mulrDr n) mulrA mulr1.
       rewrite ler_add2r -(ler_add2r (n ^+ 2 + '[X])) !addrA -nY -cfnormDd //.
       by rewrite -Dphi norm_FTtype345_bridge ?S1_1 // ler_addl cfnorm_ge0.
     have Zb: b \in Cint by rewrite rpredB ?rpred1 ?Za.

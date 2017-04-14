@@ -40,7 +40,7 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-Import GroupScope GRing.Theory Num.Theory.
+Import GroupScope GRing.Theory Num.Theory ArchimedeanTheory.
 Local Open Scope ring_scope.
 
 Lemma group_num_field_exists (gT : finGroupType) (G : {group gT}) :

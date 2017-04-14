@@ -34,7 +34,7 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-Import GroupScope GRing.Theory FinRing.Theory Num.Theory.
+Import GroupScope GRing.Theory FinRing.Theory Num.Theory ArchimedeanTheory.
 Local Open Scope ring_scope.
 
 Section PFTwelve.

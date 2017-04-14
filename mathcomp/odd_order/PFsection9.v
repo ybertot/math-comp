@@ -16,7 +16,7 @@ Require Import matrix mxalgebra mxrepresentation mxabelem vector.
 From mathcomp
 Require Import BGsection1 BGsection3 BGsection7 BGsection15 BGsection16.
 From mathcomp
-Require Import algC classfun character inertia vcharacter.
+Require Import ssrnum ssrint algC classfun character inertia vcharacter.
 From mathcomp
 Require Import PFsection1 PFsection2 PFsection3 PFsection4.
 From mathcomp
@@ -43,7 +43,7 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-Import GroupScope GRing.Theory FinRing.Theory.
+Import GroupScope GRing.Theory FinRing.Theory Num.Theory ArchimedeanTheory.
 
 Section Nine.
 
@@ -612,7 +612,7 @@ have{def_phi Dphi injm_phi'} phi'K: cancel phi' phi.
   by move=> a; rewrite def_phi /= invmE ?inE.
 have phi'1: phi' 1%R = s by rewrite /phi' rmorph1 mulmx1 [inHb _]abelem_rV_K.
 have phi_s: phi s = 1%R by rewrite -phi'1 phi'K.
-have phiJ: {in Hbar & U, forall h x, phi (h ^ inMb x) = phi h * val (psi x)}%R.
+have phiJ: {in Hbar & U, forall h x, phi (h ^ inMb x)%g = phi h * val (psi x)}%R.
   move=> h x Hh Ux; have Uxb := mem_quotient H0 Ux.
   apply: inj_phi'; rewrite phiK ?memJ_norm ?(subsetP nHbU) // /phi' rmorphM.
   by rewrite psiK // mulmxA [inHb _]rVabelemJ // -/inHb [inHb _]phiK.
@@ -903,9 +903,9 @@ have linH1 i: 'chi[H1]_i \is a linear_char by apply/char_abelianP.
 have lin_thetaH f: thetaH f \is a linear_char.
   by apply: cfBigdprod_lin_char => w _; rewrite /cfJ isom_IirrE cfIsom_lin_char.
 have nz_thetaH f: thetaH f 1%g != 0 by rewrite lin_char_neq0.
-have Dtheta f: {in W1bar & H1, forall w xb, theta f (xb ^ w) = 'chi_(f w) xb}.
+have Dtheta f: {in W1bar & H1, forall w xb, theta f (xb ^ w)%g = 'chi_(f w) xb}.
   move=> w xb W1w H1xb /=; have sHHCb := quotientS H0 sHHC.
-  transitivity ('Res[H1 :^ w] ('Res[Hbar] (theta f)) (xb ^ w)); last first.
+  transitivity ('Res[H1 :^ w] ('Res[Hbar] (theta f)) (xb ^ w)%g); last first.
     by rewrite cfDprodlK cfBigdprodKabelian // isom_IirrE cfIsomE.
   by rewrite cfResRes ?sH1wH // cfResE ?memJ_conjg ?(subset_trans (sH1wH w _)).
 have lin_theta f: theta f \is a linear_char by rewrite cfDprodl_lin_char.

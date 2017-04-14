@@ -603,7 +603,10 @@ rewrite pmulrn abszE intr_norm numqE normrM ler_pemulr ?norm_ge0 //.
 by rewrite -intr_norm ler1n absz_gt0 denq_eq0.
 Qed.
 
-Canonical archiType := ArchiFieldType rat rat_archimedean.
+Canonical rat_numArchiDomainType := NumArchiDomainType rat rat_archimedean.
+Canonical rat_realArchiDomainType := [realArchiDomainType of rat].
+Canonical rat_numArchiFieldType := [numArchiFieldType of rat].
+Canonical rat_realArchiFieldType := [realArchiFieldType of rat].
 
 Section QintPred.
 

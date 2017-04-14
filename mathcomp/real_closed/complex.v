@@ -157,6 +157,15 @@ Definition complex_comRingMixin :=
 Canonical complex_ringType :=RingType R[i] complex_comRingMixin.
 Canonical complex_comRingType := ComRingType R[i] mulcC.
 
+Lemma scalecAl (k : R) (x y : R[i]) : k *: (x * y) = k *: x * y.
+Proof.
+case: x => [xr xi]; case: y => [yr yi]; apply/eqP; rewrite /GRing.scale /=.
+by rewrite /(@GRing.mul complex_ringType) /= mulrBr mulrDr !mulrA.
+Qed.
+
+Canonical complex_lalgType := LalgType R R[i] scalecAl.
+Canonical complex_algType := CommAlgType R R[i].
+
 Lemma mulVc : forall x, x != C0 -> mulc (invc x) x = C1.
 Proof.
 move=> [a b]; rewrite eq_complex => /= hab; rewrite !mulNr opprK.
@@ -169,8 +178,9 @@ Lemma invc0 : invc C0 = C0. Proof. by rewrite /= !mul0r oppr0. Qed.
 Definition complex_fieldUnitMixin := FieldUnitMixin mulVc invc0.
 Canonical complex_unitRingType := UnitRingType C complex_fieldUnitMixin.
 Canonical complex_comUnitRingType := Eval hnf in [comUnitRingType of R[i]].
+Canonical complex_unitAlgType := Eval hnf in [unitAlgType R of R[i]].
 
-Lemma field_axiom : GRing.Field.mixin_of complex_unitRingType.
+Lemma field_axiom : GRing.Field.mixin_of complex_unitAlgType.
 Proof. by []. Qed.
 
 Definition ComplexFieldIdomainMixin := (FieldIdomainMixin field_axiom).
@@ -295,6 +305,8 @@ Qed.
 Definition complex_numMixin := NumMixin lec_normD ltc0_add eq0_normC
      ge0_lec_total normCM lec_def ltc_def.
 Canonical complex_numDomainType := NumDomainType R[i] complex_numMixin.
+Canonical complex_numFieldType := [numFieldType of complex R].
+
 
 End ComplexField.
 End ComplexField.
@@ -303,16 +315,21 @@ Canonical ComplexField.complex_zmodType.
 Canonical ComplexField.complex_lmodType.
 Canonical ComplexField.complex_ringType.
 Canonical ComplexField.complex_comRingType.
+Canonical ComplexField.complex_lalgType.
+Canonical ComplexField.complex_algType.
 Canonical ComplexField.complex_unitRingType.
 Canonical ComplexField.complex_comUnitRingType.
+Canonical ComplexField.complex_unitAlgType.
 Canonical ComplexField.complex_idomainType.
 Canonical ComplexField.complex_fieldType.
 Canonical ComplexField.complex_numDomainType.
-Canonical complex_numFieldType (R : rcfType) := [numFieldType of complex R].
+Canonical ComplexField.complex_numFieldType.
 Canonical ComplexField.real_complex_rmorphism.
 Canonical ComplexField.real_complex_additive.
 Canonical ComplexField.Re_additive.
+Canonical ComplexField.Re_linear.
 Canonical ComplexField.Im_additive.
+Canonical ComplexField.Im_linear.
 
 Definition conjc {R : ringType} (x : R[i]) := let: a +i* b := x in a -i* b.
 Notation "x ^*" := (conjc x) (at level 2, format "x ^*") : complex_scope.
@@ -1242,19 +1259,64 @@ have [] := Theorem7' (companion p); first by rewrite -(subnK sp_gt1) addn2.
 by move=> x; rewrite eigenvalue_root_char companionK //; exists x.
 Qed.
 
-Definition complex_decFieldMixin := closed_fields_QEMixin complex_acf_axiom.
-Canonical complex_decField := DecFieldType R[i] complex_decFieldMixin.
-Canonical complex_closedField := ClosedFieldType R[i] complex_acf_axiom.
-
-Definition complex_numClosedFieldMixin :=
-  ImaginaryMixin (sqr_i R) (fun x=> esym (sqr_normc x)).
-
-Canonical complex_numClosedFieldType :=
-  NumClosedFieldType R[i] complex_numClosedFieldMixin.
-
 End Paper_HarmDerksen.
 
 End ComplexClosed.
+
+Definition complex_decFieldMixin (R : rcfType) := 
+  closed_fields_QEMixin (@complex_acf_axiom R).
+Canonical complex_decField (R : rcfType) := 
+  DecFieldType R[i] (complex_decFieldMixin R).
+Canonical complex_closedField (R : rcfType) := 
+  ClosedFieldType R[i] (@complex_acf_axiom R).
+
+Definition complex_numClosedFieldMixin (R : rcfType):=
+  ImaginaryMixin (sqr_i R) (fun x=> esym (sqr_normc x)).
+
+Canonical complex_numClosedFieldType (R : rcfType) :=
+  NumClosedFieldType R[i] (complex_numClosedFieldMixin R).
+
+
+
+Module ComplexNumArchi.
+Section ComplexNumArchi.
+
+
+Variable R : realClosedArchiFieldType.
+
+Local Notation QtoC := (ratr : rat -> R[i]).
+Local Notation QtoCm := [rmorphism of QtoC].
+Local Notation pQtoC := (map_poly QtoC).
+Local Notation ZtoQ := (intr : int -> rat).
+Local Notation ZtoC := (intr : int -> R[i]).
+Local Notation Creal := (Num.real : qualifier 0 R[i]).
+
+Lemma complex_archimedean : Num.archimedean_axiom (ComplexField.complex_numDomainType R).
+Proof.
+move => z.
+have R_archi : Num.archimedean_axiom R; first by case:R => ? [].
+have normc_norm : (ComplexField.normc z)%:C = `| z |; first by [].
+have natR_natmul (p : nat) : p%:R = (1%:R *+ p : R[i]).
+  by rewrite /GRing.natmul iteropS /=.
+have natC (p : nat) : (p%:R +i* 0 : R[i]) = p%:R.
+  by rewrite [X in _ = X]natR_natmul -raddfMn /=.
+have natcR (p : nat) : p%:R = (p%:R : R)%:C.
+  by rewrite -natC real_complexE.
+move: (R_archi (ComplexField.normc z)) => [n n_lt_R].
+exists n; rewrite -normc_norm natcR ltcR.
+by apply: (ler_lt_trans (ler_norm _) n_lt_R).
+Qed.
+
+
+End ComplexNumArchi.
+End ComplexNumArchi.
+
+Canonical complex_numArchiDomain (R : realClosedArchiFieldType) :=
+  NumArchiDomainType R[i] (@ComplexNumArchi.complex_archimedean R).
+Canonical complex_numArchiField (R : realClosedArchiFieldType) :=
+  [numArchiFieldType of R[i]].
+Canonical complex_numArchiClosedField (R : realClosedArchiFieldType) :=
+  [numArchiClosedFieldType of R[i]].
 
 (* End ComplexInternal. *)
 
@@ -1303,16 +1365,21 @@ Qed.
 
 End ComplexClosedTheory.
 
+
 Definition complexalg := realalg[i].
 
 Canonical complexalg_eqType := [eqType of complexalg].
 Canonical complexalg_choiceType := [choiceType of complexalg].
 Canonical complexalg_countype := [choiceType of complexalg].
 Canonical complexalg_zmodType := [zmodType of complexalg].
+Canonical complexalg_lmodType := [lmodType _ of complexalg].
 Canonical complexalg_ringType := [ringType of complexalg].
 Canonical complexalg_comRingType := [comRingType of complexalg].
+Canonical complexalg_lalgType := [lalgType _ of complexalg].
+Canonical complexalg_algType := [algType _ of complexalg].
 Canonical complexalg_unitRingType := [unitRingType of complexalg].
 Canonical complexalg_comUnitRingType := [comUnitRingType of complexalg].
+Canonical complexalg_unitAlgType := [unitAlgType _ of complexalg].
 Canonical complexalg_idomainType := [idomainType of complexalg].
 Canonical complexalg_fieldType := [fieldType of complexalg].
 Canonical complexalg_decDieldType := [decFieldType of complexalg].
@@ -1320,6 +1387,9 @@ Canonical complexalg_closedFieldType := [closedFieldType of complexalg].
 Canonical complexalg_numDomainType := [numDomainType of complexalg].
 Canonical complexalg_numFieldType := [numFieldType of complexalg].
 Canonical complexalg_numClosedFieldType := [numClosedFieldType of complexalg].
+Canonical complexalg_numArchiDomainType := [numArchiDomainType of complexalg].
+Canonical complexalg_numArchiFieldType := [numArchiFieldType of complexalg].
+Canonical complexalg_numArchiClosedFieldType := [numArchiClosedFieldType of complexalg].
 
 Lemma complexalg_algebraic : integralRange (@ratr [unitRingType of complexalg]).
 Proof.

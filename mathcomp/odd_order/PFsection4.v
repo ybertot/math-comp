@@ -2,15 +2,15 @@
 (* Distributed under the terms of CeCILL-B.                                  *)
 Require Import mathcomp.ssreflect.ssreflect.
 From mathcomp
-Require Import ssrbool ssrfun eqtype ssrnat seq path div choice.
+Require Import ssrbool ssrfun eqtype ssrnat seq path div choice fintype.
 From mathcomp
-Require Import fintype tuple finfun bigop prime ssralg poly finset fingroup.
+Require Import tuple finfun bigop prime ssralg poly finset fingroup morphism.
 From mathcomp
-Require Import morphism perm automorphism quotient action gfunctor gproduct.
+Require Import perm automorphism quotient action gfunctor gproduct center.
 From mathcomp
-Require Import center commutator zmodp cyclic pgroup nilpotent hall frobenius.
+Require Import commutator zmodp cyclic pgroup nilpotent hall frobenius matrix.
 From mathcomp
-Require Import matrix mxalgebra mxrepresentation vector ssrnum algC classfun.
+Require Import mxalgebra mxrepresentation vector ssrnum ssrint algC classfun.
 From mathcomp
 Require Import character inertia vcharacter PFsection1 PFsection2 PFsection3.
 
@@ -64,7 +64,7 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-Import GroupScope GRing.Theory Num.Theory.
+Import GroupScope GRing.Theory Num.Theory ArchimedeanTheory.
 Local Open Scope ring_scope.
 
 Section Four_1_to_2.
@@ -236,7 +236,7 @@ have{xy V2xy} [/(mem_dprod defW)[x [y [W1x W2y -> _]]] W2'xy] := setDP V2xy.
 have{W2'xy} ntx: x != 1%g by have:= W2'xy; rewrite groupMr // => /group1_contra.
 have{g Lg} [k [w [Kk /(subsetP sW1W)Ww -> _]]] := mem_sdprod defL Lg.
 rewrite conjgM memJ_norm ?(subsetP nV2W) ?(groupMr k) // => /setDP[Wxyk _].
-have{Wxyk piW1_W} W1xk: x ^ k \in W1.
+have{Wxyk piW1_W} W1xk: (x ^ k)%g \in W1.
   have [xk [yk [W1xk W2yk Dxyk _]]] := mem_dprod defW Wxyk.
   by rewrite -(piW1_W x y) // -consttJ Dxyk piW1_W.
 rewrite (subsetP sW2W) // -(@prKW1 x) ?in_setD1 ?ntx // inE Kk /=.

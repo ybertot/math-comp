@@ -57,7 +57,7 @@ Local Notation eval := horner_eval.
 
 Section RealAlg.
 
-Variable F : archiFieldType.
+Variable F : realArchiFieldType.
 Local Notation m0 := (fun _ => 0%N).
 
 (*********************************************************************)
@@ -1041,14 +1041,20 @@ rewrite -ler_to_alg rmorphD /= (ler_trans _ (ltrW hxa)) //.
 by move=> /(_ isT) /(ltr_trans _)->.
 Qed.
 
-Canonical alg_archiFieldType := ArchiFieldType alg alg_archi.
-Canonical alg_of_archiFieldType := [archiFieldType of {alg F}].
+Canonical alg_numArchiDomainType := NumArchiDomainType alg alg_archi.
+Canonical alg_numArchiFieldType := [numArchiFieldType of alg].
+Canonical alg_realArchiDomainType := [realArchiDomainType of alg].
+Canonical alg_realArchiFieldType := [realArchiFieldType of alg].
+Canonical alg_of_numArchiDomainType := [numArchiDomainType of {alg F}].
+Canonical alg_of_numArchiFieldType := [numArchiFieldType of {alg F}].
+Canonical alg_of_realArchiDomainType := [realArchiDomainType of {alg F}].
+Canonical alg_of_realArchiFieldType := [realArchiFieldType of {alg F}].
 
 (**************************************************************************)
 (* At this stage, algebraics form an archimedian field.  We now build the *)
 (* material to prove the intermediate value theorem.  We first prove a    *)
 (* "weak version", which expresses that the extension {alg F} indeed      *)
-(* contains solutions of the intermediate value probelem in F             *)
+(* contains solutions of the intermediate value problem in F             *)
 (**************************************************************************)
 
 Notation "'Y" := 'X%:P.
@@ -1234,7 +1240,7 @@ Notation to_alg F := (@to_alg_def _ (Phant F)).
 Notation "x %:RA" := (to_alg _ x)
   (at level 2, left associativity, format "x %:RA").
 
-Lemma upper_nthrootVP (F : archiFieldType) (x : F) (i : nat) :
+Lemma upper_nthrootVP (F : realArchiFieldType) (x : F) (i : nat) :
    0 < x -> (Num.bound (x ^-1) <= i)%N -> 2%:R ^- i < x.
 Proof.
 move=> x_gt0 hx; rewrite -ltf_pinv -?topredE //= ?gtr0E //.
@@ -1245,7 +1251,7 @@ Notation "{ 'alg'  F }" := (alg_of (Phant F)).
 
 Section AlgAlg.
 
-Variable F : archiFieldType.
+Variable F : realArchiFieldType.
 
 Local Open Scope ring_scope.
 
@@ -1359,7 +1365,7 @@ End AlgAlg.
 
 Section AlgAlgAlg.
 
-Variable F : archiFieldType.
+Variable F : realArchiFieldType.
 
 Local Open Scope ring_scope.
 
@@ -1428,6 +1434,8 @@ Qed.
 
 Canonical alg_rcfType := RcfType (alg F) ivt.
 Canonical alg_of_rcfType := [rcfType of {alg F}].
+Canonical alg_realClosedArchiFieldType := [realClosedArchiFieldType of (alg F)].
+Canonical alg_of_realClosedArchiFieldType := [realClosedArchiFieldType of {alg F}].
 
 End AlgAlgAlg.
 End RealAlg.
@@ -1452,8 +1460,12 @@ Canonical RealAlg.alg_numDomainType.
 Canonical RealAlg.alg_numFieldType.
 Canonical RealAlg.alg_realDomainType.
 Canonical RealAlg.alg_realFieldType.
-Canonical RealAlg.alg_archiFieldType.
+Canonical RealAlg.alg_numArchiDomainType.
+Canonical RealAlg.alg_numArchiFieldType.
+Canonical RealAlg.alg_realArchiDomainType.
+Canonical RealAlg.alg_realArchiFieldType.
 Canonical RealAlg.alg_rcfType.
+Canonical RealAlg.alg_realClosedArchiFieldType.
 
 Canonical RealAlg.alg_of_eqType.
 Canonical RealAlg.alg_of_choiceType.
@@ -1468,15 +1480,19 @@ Canonical RealAlg.alg_of_numDomainType.
 Canonical RealAlg.alg_of_numFieldType.
 Canonical RealAlg.alg_of_realDomainType.
 Canonical RealAlg.alg_of_realFieldType.
-Canonical RealAlg.alg_of_archiFieldType.
+Canonical RealAlg.alg_of_numArchiDomainType.
+Canonical RealAlg.alg_of_numArchiFieldType.
+Canonical RealAlg.alg_of_realArchiDomainType.
+Canonical RealAlg.alg_of_realArchiFieldType.
 Canonical RealAlg.alg_of_rcfType.
+Canonical RealAlg.alg_of_realClosedArchiFieldType.
 
 Canonical RealAlg.to_alg_is_rmorphism.
 Canonical RealAlg.to_alg_is_additive.
 
 Section RealClosureTheory.
 
-Variable F : archiFieldType.
+Variable F : realArchiFieldType.
 Notation R := {realclosure F}.
 
 Local Notation "p ^ f" := (map_poly f p) : ring_scope.
@@ -1512,15 +1528,19 @@ Canonical realalg_numDomainType := [numDomainType of realalg].
 Canonical realalg_numFieldType := [numFieldType of realalg].
 Canonical realalg_realDomainType := [realDomainType of realalg].
 Canonical realalg_realFieldType := [realFieldType of realalg].
-Canonical realalg_archiFieldType := [archiFieldType of realalg].
+Canonical realalg_numArchiDomainType := [numArchiDomainType of realalg].
+Canonical realalg_numArchiFieldType := [numArchiFieldType of realalg].
+Canonical realalg_realArchiDomainType := [realArchiDomainType of realalg].
+Canonical realalg_realArchiFieldType := [realArchiFieldType of realalg].
 Canonical realalg_rcfType := [rcfType of realalg].
+Canonical realalg_realClosedArchiFieldType := [realClosedArchiFieldType of realalg].
 
 Module RatRealAlg.
 Canonical RealAlg.algdom_choiceType.
 Definition realalgdom_CountMixin :=
-   PcanCountMixin (@RealAlg.encode_algdomK [archiFieldType of rat]).
+   PcanCountMixin (@RealAlg.encode_algdomK [realArchiFieldType of rat]).
 Canonical realalgdom_countType :=
-   CountType (RealAlg.algdom [archiFieldType of rat]) realalgdom_CountMixin.
+   CountType (RealAlg.algdom [realArchiFieldType of rat]) realalgdom_CountMixin.
 Definition realalg_countType := [countType of realalg].
 End RatRealAlg.
 

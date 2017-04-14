@@ -10,9 +10,9 @@ Require Import fingroup morphism perm automorphism quotient action zmodp.
 From mathcomp
 Require Import gfunctor gproduct cyclic pgroup commutator gseries nilpotent.
 From mathcomp
-Require Import sylow abelian maximal hall frobenius.
+Require Import sylow abelian maximal hall frobenius matrix.
 From mathcomp
-Require Import matrix mxalgebra mxrepresentation vector ssrnum algC algnum.
+Require Import mxalgebra mxrepresentation vector ssrnum ssrint algC algnum.
 From mathcomp
 Require Import classfun character inertia vcharacter integral_char. 
 From mathcomp
@@ -33,7 +33,7 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-Import GroupScope GRing.Theory Num.Theory.
+Import GroupScope GRing.Theory Num.Theory ArchimedeanTheory.
 Local Open Scope ring_scope.
 
 (* The main section *)
@@ -373,7 +373,8 @@ rewrite -expnM Gauss_dvd ?coprime_expl ?coprime_expr {coep}// dvdn_mulr //=.
 have /dvdn_addl <-: p ^ (d chi * 2) %| e ^ 2 * sum_p2d X''.
   rewrite big_distrr big_seq dvdn_sum //= => xi /le_chi_X'' le_chi_xi.
   by rewrite dvdn_mull // dvdn_exp2l ?leq_pmul2r.
-rewrite -mulnDr -big_cat (eq_big_perm _ defX) -(natCK (e ^ 2 * _)) /=.
+rewrite -mulnDr -big_cat (eq_big_perm _ defX).
+rewrite -(@natCK [numArchiDomainType of algC] (e ^ 2 * _)%N) /=.
 rewrite -def_sum_xi1 // /sum_xi1 sum_seqIndD_square ?normal1 ?sub1G //.
 rewrite indexg1 -(natrB _ (cardG_gt0 Z)) -natrM natCK.
 rewrite -(Lagrange_index sKL sZK) mulnAC dvdn_mull //.
@@ -433,7 +434,7 @@ have{actsGC} PdvKa i j s:
     by rewrite card_orbit regPO // indexg1.
   case=> u v /setIdP[/andP[/= Ciu Cjv] Csuv]; apply: contraTeq Z's.
   case/trivgPn=> x /setIP[Px /astab1P[/= cux cvx]] nt_x.
-  suffices inZ k y: y \in C k -> ~~ dC k Z^# -> y ^ x = y -> y \in Z.
+  suffices inZ k y: y \in C k -> ~~ dC k Z^# -> (y ^ x)%g = y -> y \in Z.
     apply/exists_inP; exists (u * v)%g => //=.
     by rewrite groupM // (inZ i u, inZ j v).
   rewrite /dC /C; have /imsetP[_ _ ->{k} /class_eqP <-] := enum_valP k.
@@ -869,7 +870,7 @@ have{odd_frobL1} caseA_cohXY: caseA -> coherent (X ++ Y) L^# tau.
       by rewrite rpredB ?rpredZ ?rpred_sum // => *; rewrite memv_span ?map_f.
     congr (_ + _); transitivity (b ^+ 2 * m + a ^+ 2 - a * b *+ 2); last first.
       rewrite [RHS]mulrC [in RHS]addrC mulrBl sqrrB1 !addrA mulrDl !mul1r subrK.
-      by rewrite mulrBl [m * _]mulrC mulrnAl mulrAC Db exprMn (mulrCA a) addrAC.
+      by rewrite mulrBl (mulrC _ m) -mulrA -exprMn addrAC Db (mulrCA a) !mulrnAl. 
     rewrite addrC cfnormB !cfnormZ Cint_normK ?norm_Cnat // cfdotZr.
     rewrite cfnorm_map_orthonormal // -/m linear_sum cfproj_sum_orthonormal //.
     by rewrite oYYt ?map_f // eqxx mulr1 rmorphM conjCK aut_Cnat ?aut_Cint.

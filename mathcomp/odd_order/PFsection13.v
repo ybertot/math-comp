@@ -18,7 +18,7 @@ Require Import BGsection1 BGsection3 BGsection7.
 From mathcomp
 Require Import BGsection14 BGsection15 BGsection16.
 From mathcomp
-Require Import ssrnum rat algC cyclotomic algnum.
+Require Import ssrnum ssrint rat algC cyclotomic algnum.
 From mathcomp
 Require Import classfun character integral_char inertia vcharacter.
 From mathcomp
@@ -57,7 +57,7 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-Import GroupScope GRing.Theory FinRing.Theory Num.Theory.
+Import GroupScope GRing.Theory Num.Theory ArchimedeanTheory FinRing.Theory.
 
 Section Thirteen.
 
@@ -234,7 +234,7 @@ apply/normedTI_memJ_P=> //; rewrite subsetT; split=> // x g A0x Gg.
 apply/idP/idP=> [A0xg | /(subsetP (FTsupp0_norm S))/memJ_norm->//].
 apply/idPn=> S'g; have Dx: x \in [set y in 'A0(S) | ~~ ('C[y] \subset S)].
   rewrite inE A0x; have [_ _ [_ _ _ wccA0 _] _] := pddS.
-  have /imsetP[y Sy Dxy]: x ^ g \in x ^: S by rewrite wccA0 // mem_orbit.
+  have /imsetP[y Sy Dxy]: (x ^ g)%g \in x ^: S by rewrite wccA0 // mem_orbit.
   apply/subsetPn; exists (g * y^-1)%g; last by rewrite groupMr ?groupV.
   by rewrite !inE conjg_set1 conjgM Dxy conjgK.
 have [_ [_ /(_ x Dx) defL] /(_ x Dx)[_ _]] := FTsupport_facts maxS.
@@ -590,7 +590,7 @@ case/andP=> irr_phi /(coherent_ortho_cycTIiso StypeP sSS0 cohS) o_phi_eta.
 by rewrite raddfZ_Cint {Zz}//= cfdotZl o_phi_eta ?mulr0.
 Qed.
 
-Let P1_int2_lb b : b \in Cint -> 2%:R * u%:R * b <= #|P|.-1%:R * b ^+ 2.
+Let P1_int2_lb (b : algC) : b \in Cint -> 2%:R * u%:R * b <= #|P|.-1%:R * b ^+ 2.
 Proof.
 move=> Zb; rewrite -natrM; apply: ler_trans (_ : (2 * u)%:R * b ^+ 2 <= _).
   by rewrite ler_wpmul2l ?ler0n ?Cint_ler_sqr.
@@ -1095,7 +1095,7 @@ have [tau1 cohS cohSmu] := FTtypeP_coherence maxS StypeP.
 pose lam1 := tau1 lambda; pose eta10 := eta_ #1 0.
 pose H1G := class_support H^# G; pose K1G := class_support K^# G.
 pose G0 := ~: (class_support H G :|: class_support K G).
-pose invJ (f : gT -> algC) := forall y x, f (x ^ y) = f x.
+pose invJ (f : gT -> algC) := forall y x, f (x ^ y)%g = f x.
 pose nm2 (chi : 'CF(G)) x := `|chi x| ^+ 2; pose g : algC := #|G|%:R.
 have injJnm2 chi: invJ (nm2 chi) by move=> y x; rewrite /nm2 cfunJ ?inE.
 have nm2_dirr chi: chi \in dirr G -> g^-1 <= nm2 chi 1%g / g.
