@@ -466,7 +466,7 @@ End Loop.
 
 Section subset_orbit.
 
-Variable S : pred T.
+Variable S : pred_sort (predPredType T).
 
 Hypothesis stable : {in S, forall x, f x \in S}.
 Hypothesis injf : {in S &, injective f}.
@@ -576,10 +576,10 @@ End subset_orbit.
 Hypothesis injf : injective f.
 
 Lemma f_finv : cancel finv f.
-Proof. by move => x; apply: (@f_finv_in predT) => //= u v _ _ /injf. Qed.
+Proof. by apply: in1T; apply: f_finv_in => //; apply: in2W. Qed.
 
 Lemma finv_f : cancel f finv.
-Proof. by move => x; apply: (@finv_f_in predT) => //= u v _ _ /injf. Qed.
+Proof. by apply: in1T; apply: finv_f_in => //; apply: in2W. Qed.
 
 Lemma fin_inj_bij : bijective f.
 Proof. by exists finv; [apply finv_f | apply f_finv]. Qed.
@@ -591,26 +591,29 @@ Lemma finv_inj : injective finv.
 Proof. exact: (can_inj f_finv). Qed.
 
 Lemma fconnect_sym x y : fconnect f x y = fconnect f y x.
-Proof. by apply: (@fconnect_sym_in predT) => // u v _ _ /injf. Qed.
+Proof.
+by move: x y; apply: in2T; apply: fconnect_sym_in => //; apply: in2W.
+Qed.
 
 Let symf := fconnect_sym.
 
 Lemma iter_order x : iter (order x) f x = x.
-Proof. by apply: (@iter_order_in predT) => // u v _ _ /injf. Qed.
+Proof. by move: x; apply: in1T; apply: iter_order_in=> //; apply: in2W. Qed.
 
 Lemma iter_finv n x : n <= order x -> iter n finv x = iter (order x - n) f x.
 Proof.
-by move => no; apply: (@iter_finv_in predT) => // u v _ _ /injf.
+by move: x; apply: in1T; apply: iter_finv_in => //; apply: in2W.
 Qed.
 
 Lemma cycle_orbit x : fcycle f (orbit x).
-Proof. by apply: (@cycle_orbit_in predT) => // u v _ _ /injf. Qed.
+Proof. by move: x; apply: in1T; apply: cycle_orbit_in => //; apply: in2W. Qed.
 
 Lemma fpath_finv x p : fpath finv x p = fpath f (last x p) (rev (belast x p)).
 Proof.
 apply/idP/idP.
-  by apply: (@fpath_finv_f_in predT) => // u v _ _ /injf.
-by apply: (@fpath_f_finv_in predT) => // u v _ _ /injf.
+  by move: x; apply: in1T; apply: fpath_finv_f_in => //; apply: in2W.
+move: (erefl (last x p)); move: (LHS) => y; move: y x.
+by apply: in1T; apply: fpath_f_finv_in => //; apply: in2W.
 Qed.
 
 Lemma same_fconnect_finv : fconnect finv =2 fconnect f.
