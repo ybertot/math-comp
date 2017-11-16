@@ -471,36 +471,36 @@ Variable S : pred T.
 Hypothesis stable : {in S, forall x, f x \in S}.
 Hypothesis injf : {in S &, injective f}.
 
-Lemma subset_stable_iter : {in S, forall x i, iter i f x \in S}.
+Lemma stable_in_iter : {in S, forall x i, iter i f x \in S}.
 Proof. by move => x sx; elim =>[ | i] //; rewrite iterS; apply/stable. Qed.
 
-Lemma subset_f_finv : {in S, cancel finv f}.
+Lemma f_finv_in : {in S, cancel finv f}.
 Proof.
 move => x sx.
 move: (looping_order x) (orbit_uniq x).
 rewrite /looping /orbit -orderSpred looping_uniq /= /looping; set n := _.-1.
 case/predU1P=> // /trajectP[i lt_i_n]; rewrite -iterSr => /=.
 have [itnS  itiS] : iter n f x \in S /\ iter i f x \in S.
-  by split; apply/subset_stable_iter.
+  by split; apply/stable_in_iter.
 move/injf => /(_ itnS) /(_ itiS) ->.
 by case/trajectP; exists i.
 Qed.
 
-Lemma subset_finv_f : {in S, cancel f finv}.
+Lemma finv_f_in : {in S, cancel f finv}.
 Proof.
-move => x sx; apply/injf=> //;[apply/subset_stable_iter/stable => // | ].
-by rewrite subset_f_finv ?stable.
+move => x sx; apply/injf=> //;[apply/stable_in_iter/stable => // | ].
+by rewrite f_finv_in ?stable.
 Qed.
 
 (* There is no pre-defined concept equivalent to bijective on a
   subset, regardless of what happens outside the subset. *)
 
-Lemma subset_finv_inj : {in S &, injective finv}.
+Lemma finv_inj_in : {in S &, injective finv}.
 Proof.
-by move => x y sx sy q; rewrite -(subset_f_finv sx) q (subset_f_finv sy).
+by move => x y sx sy q; rewrite -(f_finv_in sx) q (f_finv_in sy).
 Qed.
 
-Lemma subset_fconnect_sym :
+Lemma fconnect_sym_in :
   {in S &, forall x y, fconnect f x y = fconnect f y x}.
 Proof.
 suff Sf x y (sx : x \in S) (sy : y \in S): fconnect f x y -> fconnect f y x.
@@ -509,42 +509,42 @@ case/connectP=> p f_p -> {y sy}; elim: p x sx f_p => //= y p IHp x.
 move => sx /andP [/eqP fxy].
 have ys : y \in S by rewrite -fxy stable.
 move/IHp => /(_ ys)/connect_trans; apply.
-by rewrite -fxy -{2}(subset_finv_f sx) fconnect_finv.
+by rewrite -fxy -{2}(finv_f_in sx) fconnect_finv.
 Qed.
 
-Lemma subset_iter_order : {in S, forall x, iter (order x) f x = x}.
+Lemma iter_order_in : {in S, forall x, iter (order x) f x = x}.
 Proof.
-by move => x xs; rewrite -orderSpred iterS; apply (subset_f_finv xs).
+by move => x xs; rewrite -orderSpred iterS; apply (f_finv_in xs).
 Qed.
 
-Lemma subset_iter_finv n :
+Lemma iter_finv_in n :
   {in S, forall x, n <= order x -> iter n finv x = iter (order x - n) f x}.
 Proof.
 move => x xs.
-rewrite -{2}[x]subset_iter_order => // /subnKC {1}<-; move: (_ - n) => m.
-rewrite iter_add; elim: n => // n {2}<-; rewrite iterSr /= subset_finv_f //.
-by rewrite -iter_add subset_stable_iter.
+rewrite -{2}[x]iter_order_in => // /subnKC {1}<-; move: (_ - n) => m.
+rewrite iter_add; elim: n => // n {2}<-; rewrite iterSr /= finv_f_in //.
+by rewrite -iter_add stable_in_iter.
 Qed.
 
-Lemma subset_cycle_orbit : {in S, forall x, (fcycle f) (orbit x)}.
+Lemma cycle_orbit_in : {in S, forall x, (fcycle f) (orbit x)}.
 Proof.
 move => x sx.
 rewrite /orbit -orderSpred (cycle_path x) /= last_traject -/(finv x).
-by rewrite fpath_traject subset_f_finv ?andbT.
+by rewrite fpath_traject f_finv_in ?andbT.
 Qed.
 
 (* There seems to be no simple equivalent of fpath_finv for subsets *)
 
-Lemma subset_fpath_finv_f p :
+Lemma fpath_finv_f_in p :
    {in S, forall x, fpath finv x p -> fpath f (last x p) (rev (belast x p))}.
 Proof.
 elim: p => //= y p IHp x xs /andP [/eqP vy py]; rewrite rev_cons rcons_path.
-have ys : y \in S by rewrite -vy; apply: subset_stable_iter.
+have ys : y \in S by rewrite -vy; apply: stable_in_iter.
 by rewrite (IHp _ ys py); case: p {IHp py} => //= [ | a l];
-   rewrite ?rev_cons ?path_rcons ?last_rcons /= -vy subset_f_finv.
+   rewrite ?rev_cons ?path_rcons ?last_rcons /= -vy f_finv_in.
 Qed.
 
-Lemma subset_fpath_f_finv p :
+Lemma fpath_f_finv_in p :
   {in S, forall y x, y = last x p -> fpath f (last x p) (rev (belast x p))
     -> fpath finv x p}.
 Proof.
@@ -567,7 +567,7 @@ rewrite (IHp y ys a q pa) andbT.
 have la : last (last a p) (rev (belast a p)) = a.
   by case: p {IHp q pa vx} => /= [ | b l']; rewrite ?rev_cons ?last_rcons.
 move : vx; rewrite la => <-.
-apply/eqP/subset_finv_f.
+apply/eqP/finv_f_in.
 by apply: (inS p y ys a q pa); rewrite inE eqxx.
 Qed.
 
@@ -576,10 +576,10 @@ End subset_orbit.
 Hypothesis injf : injective f.
 
 Lemma f_finv : cancel finv f.
-Proof. by move => x; apply: (@subset_f_finv predT) => //= u v _ _ /injf. Qed.
+Proof. by move => x; apply: (@f_finv_in predT) => //= u v _ _ /injf. Qed.
 
 Lemma finv_f : cancel f finv.
-Proof. by move => x; apply: (@subset_finv_f predT) => //= u v _ _ /injf. Qed.
+Proof. by move => x; apply: (@finv_f_in predT) => //= u v _ _ /injf. Qed.
 
 Lemma fin_inj_bij : bijective f.
 Proof. by exists finv; [apply finv_f | apply f_finv]. Qed.
@@ -591,26 +591,26 @@ Lemma finv_inj : injective finv.
 Proof. exact: (can_inj f_finv). Qed.
 
 Lemma fconnect_sym x y : fconnect f x y = fconnect f y x.
-Proof. by apply: (@subset_fconnect_sym predT) => // u v _ _ /injf. Qed.
+Proof. by apply: (@fconnect_sym_in predT) => // u v _ _ /injf. Qed.
 
 Let symf := fconnect_sym.
 
 Lemma iter_order x : iter (order x) f x = x.
-Proof. by apply: (@subset_iter_order predT) => // u v _ _ /injf. Qed.
+Proof. by apply: (@iter_order_in predT) => // u v _ _ /injf. Qed.
 
 Lemma iter_finv n x : n <= order x -> iter n finv x = iter (order x - n) f x.
 Proof.
-by move => no; apply: (@subset_iter_finv predT) => // u v _ _ /injf.
+by move => no; apply: (@iter_finv_in predT) => // u v _ _ /injf.
 Qed.
 
 Lemma cycle_orbit x : fcycle f (orbit x).
-Proof. by apply: (@subset_cycle_orbit predT) => // u v _ _ /injf. Qed.
+Proof. by apply: (@cycle_orbit_in predT) => // u v _ _ /injf. Qed.
 
 Lemma fpath_finv x p : fpath finv x p = fpath f (last x p) (rev (belast x p)).
 Proof.
 apply/idP/idP.
-  by apply: (@subset_fpath_finv_f predT) => // u v _ _ /injf.
-by apply: (@subset_fpath_f_finv predT) => // u v _ _ /injf.
+  by apply: (@fpath_finv_f_in predT) => // u v _ _ /injf.
+by apply: (@fpath_f_finv_in predT) => // u v _ _ /injf.
 Qed.
 
 Lemma same_fconnect_finv : fconnect finv =2 fconnect f.
