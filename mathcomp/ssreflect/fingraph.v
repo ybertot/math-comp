@@ -504,7 +504,7 @@ Lemma fconnect_sym_in :
   {in S &, forall x y, fconnect f x y = fconnect f y x}.
 Proof.
 suff Sf x y (sx : x \in S) (sy : y \in S): fconnect f x y -> fconnect f y x.
-  by move => x y sx xy; apply/idP/idP; auto.
+  by move => x y sx xy; apply/idP/idP; apply:Sf.
 case/connectP=> p f_p -> {y sy}; elim: p x sx f_p => //= y p IHp x.
 move => sx /andP [/eqP fxy].
 have ys : y \in S by rewrite -fxy stable.
@@ -555,7 +555,7 @@ move => {p}.
     by move => c; rewrite -q inE => /eqP ->.
   rewrite rev_cons rcons_path => /andP [pa vx].
   have := (IHp y ys _ q pa) => sap.
-  move => c; rewrite inE => /orP[/eqP -> {c}| ];[ | apply sap].
+  move => c; rewrite inE => /orP[/eqP -> {c}| ]; last by apply: sap.
   rewrite -(eqP vx).
   set v := last _ _; have -> : v = a.
     rewrite /v; case: p {IHp q pa vx sap v} => [ | b l']//=.
