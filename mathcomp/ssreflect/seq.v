@@ -1294,16 +1294,24 @@ Proof. by move=> x; rewrite -{2}(cat_take_drop n0 s) !mem_cat /= orbC. Qed.
 Lemma eqseq_rot s1 s2 : (rot n0 s1 == rot n0 s2) = (s1 == s2).
 Proof. by apply: inj_eq; apply: rot_inj. Qed.
 
+End EqSeq.
+
+Section RotIndex.
+Variables (T : eqType).
+Implicit Types x y z : T.
+
+Lemma rot_index s x (i := index x s) : x \in s ->
+  rot i s = x :: (drop i.+1 s ++ take i s).
+Proof.
+by move=> x_s; rewrite /rot (drop_nth x) ?index_mem ?nth_index// cat_cons.
+Qed.
+
 Variant rot_to_spec s x := RotToSpec i s' of rot i s = x :: s'.
 
 Lemma rot_to s x : x \in s -> rot_to_spec s x.
-Proof.
-move=> s_x; pose i := index x s; exists i (drop i.+1 s ++ take i s).
-rewrite -cat_cons {}/i; congr cat; elim: s s_x => //= y s IHs.
-by rewrite eq_sym in_cons; case: eqP => // -> _; rewrite drop0.
-Qed.
+Proof. by move=> /rot_index /RotToSpec. Qed.
 
-End EqSeq.
+End RotIndex.
 
 Definition inE := (mem_seq1, in_cons, inE).
 
@@ -2802,11 +2810,6 @@ Definition all_iff (P0 : Prop) (Ps : seq Prop) : Prop :=
       if Qs is Q :: Qs then all_iff_and (P -> Q) (aux Q Qs)
       else P -> P0 : Prop) P0 Ps.
 
-(* This means "the following are all equivalent: P0, ... Pn" *)
-Notation "[ '<->' P0 ; P1 ; .. ; Pn ]" := (all_iff P0 (P1 :: .. [:: Pn] ..))
-  (at level 0, format "[ '<->' '['  P0 ;  '/' P1 ;  '/'  .. ;  '/'  Pn ']' ]")
-  : form_scope.
-
 Lemma all_iffLR P0 Ps : all_iff P0 Ps ->
    forall m n, nth P0 (P0 :: Ps) m -> nth P0 (P0 :: Ps) n.
 Proof.
@@ -2839,3 +2842,8 @@ End AllIff.
 Arguments all_iffLR {P0 Ps}.
 Arguments all_iffP {P0 Ps}.
 Coercion all_iffP : all_iff >-> Funclass.
+
+(* This means "the following are all equivalent: P0, ... Pn" *)
+Notation "[ '<->' P0 ; P1 ; .. ; Pn ]" := (all_iff P0 (P1 :: .. [:: Pn] ..))
+  (at level 0, format "[ '<->' '['  P0 ;  '/' P1 ;  '/'  .. ;  '/'  Pn ']' ]")
+  : form_scope.
