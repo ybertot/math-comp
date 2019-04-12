@@ -380,10 +380,54 @@ End EqPath.
 
 (* Ordered paths and sorting. *)
 
+Section abstract_sort.
+
+Variable T : Type.
+
+Variable leT : rel T.
+
+Fixpoint merge s1 :=
+  if s1 is x1 :: s1' then
+    let fix merge_s1 s2 :=
+      if s2 is x2 :: s2' then
+        if leT x2 x1 then x2 :: merge_s1 s2' else x1 :: merge s1' s2
+      else s1 in
+    merge_s1
+  else id.
+
+Fixpoint merge_sort_push s1 ss :=
+  match ss with
+  | [::] :: ss' | [::] as ss' => s1 :: ss'
+  | s2 :: ss' => [::] :: merge_sort_push (merge s1 s2) ss'
+  end.
+
+Fixpoint merge_sort_pop s1 ss :=
+  if ss is s2 :: ss' then merge_sort_pop (merge s1 s2) ss' else s1.
+
+Fixpoint merge_sort_rec ss s :=
+  if s is [:: x1, x2 & s'] then
+    let s1 := if leT x1 x2 then [:: x1; x2] else [:: x2; x1] in
+    merge_sort_rec (merge_sort_push s1 ss) s'
+  else merge_sort_pop s ss.
+
+Definition sort := merge_sort_rec [::].
+
+End abstract_sort.
+
 Section SortSeq.
 
 Variable T : eqType.
 Variable leT : rel T.
+
+Local Notation merge := (merge leT).
+
+Local Notation merge_sort_push := (merge_sort_push leT).
+
+Local Notation merge_sort_pop := (merge_sort_pop leT).
+
+Local Notation merge_sort_rec := (merge_sort_rec leT).
+
+Local Notation sort := (sort leT).
 
 Definition sorted s := if s is x :: s' then path leT x s' else true.
 
@@ -456,15 +500,6 @@ End Transitive.
 
 Hypothesis leT_total : total leT.
 
-Fixpoint merge s1 :=
-  if s1 is x1 :: s1' then
-    let fix merge_s1 s2 :=
-      if s2 is x2 :: s2' then
-        if leT x2 x1 then x2 :: merge_s1 s2' else x1 :: merge s1' s2
-      else s1 in
-    merge_s1
-  else id.
-
 Lemma merge_path x s1 s2 :
   path leT x s1 -> path leT x s2 -> path leT x (merge s1 s2).
 Proof.
@@ -498,23 +533,6 @@ Proof. by apply: perm_eq_size; rewrite perm_merge. Qed.
 
 Lemma merge_uniq s1 s2 : uniq (merge s1 s2) = uniq (s1 ++ s2).
 Proof. by apply: perm_eq_uniq; rewrite perm_merge. Qed.
-
-Fixpoint merge_sort_push s1 ss :=
-  match ss with
-  | [::] :: ss' | [::] as ss' => s1 :: ss'
-  | s2 :: ss' => [::] :: merge_sort_push (merge s1 s2) ss'
-  end.
-
-Fixpoint merge_sort_pop s1 ss :=
-  if ss is s2 :: ss' then merge_sort_pop (merge s1 s2) ss' else s1.
-
-Fixpoint merge_sort_rec ss s :=
-  if s is [:: x1, x2 & s'] then
-    let s1 := if leT x1 x2 then [:: x1; x2] else [:: x2; x1] in
-    merge_sort_rec (merge_sort_push s1 ss) s'
-  else merge_sort_pop s ss.
-
-Definition sort := merge_sort_rec [::].
 
 Lemma sort_sorted s : sorted (sort s).
 Proof.
