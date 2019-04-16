@@ -455,32 +455,23 @@ elim: s1 s2 => [// | ? ? IH1 /=]; elim => [// | ? ? IH2 /=].
 by case:ifP => [_ | _] /=; rewrite ?IH2 // IH1 /= !addnS addSn.
 Qed.
 
-Lemma size_merge_sort_pop ss s : size (merge_sort_pop s ss) =
-  foldl (fun n s' => n + (size s')) (size s) ss.
+Lemma size_sort s : size (sort s) = size s.
 Proof.
-by elim: ss s => [// | //= s2 ss' IH s]; rewrite //= IH size_merge.
-Qed.
-
-Lemma size_merge_sort_push k s1 ss : foldl (fun n s' => n + size s')
+rewrite /sort; suff -> : forall ss, size (merge_sort_rec ss s) =
+  foldl (fun n s'=> n + size s') (size s) ss by [].
+elim: {s}_.+1 {-2}s (ltnSn (size s)) => // n IHn.
+have s_pop : forall ss s,  size (merge_sort_pop s ss) =
+  foldl (fun n s' => n + (size s')) (size s) ss.
+  by elim => [// | //= ? ? IH s]; rewrite //= IH size_merge.
+have s_push k s1 ss : foldl (fun n s' => n + size s')
       k (merge_sort_push s1 ss) =
    foldl (fun n s' => n + (size s')) (k + size s1) ss.
-Proof.
-elim: ss s1 k => [ | s' ss' IH] s1 k //=.
-by case q : s' => [ | b s''] /=; rewrite ?addn0 // IH size_merge addnA.
-Qed.
-
-Lemma size_merge_sort_rec ss s : size (merge_sort_rec ss s) =
-    foldl (fun n s' => n + size s') (size s) ss.
-Proof.
-elim: {s}_.+1 {-2}s (ltnSn (size s)) ss => // n IHn s.
-case: s => [ | a [ | b s]] z ss; rewrite ?size_merge_sort_pop //.
+  elim: ss s1 k => [ | s' ss' IH] s1 k //=.
+  by case q : s' => [ | b s''] /=; rewrite ?addn0 // IH size_merge addnA.
+case => [ | a [ | b s]] z ss; rewrite ?s_pop //.
 move: z; rewrite /= ltnS => z; have zn : size s < n by apply: ltn_trans z.
-rewrite IHn // size_merge_sort_push.
-by case: ifP => _ //=; rewrite !addnS !addn0.
+by rewrite IHn // s_push; case: ifP => _ //=; rewrite !addnS !addn0.
 Qed.
-
-Lemma size_sort s: size (sort s) = size s.
-Proof. by rewrite /sort size_merge_sort_rec. Qed.
 
 End SortSeq.
 
@@ -570,9 +561,6 @@ Qed.
 Lemma mem_merge s1 s2 : merge s1 s2 =i s1 ++ s2.
 Proof. by apply: perm_eq_mem; rewrite perm_merge. Qed.
 
-Lemma size_merge s1 s2 : size (merge s1 s2) = size (s1 ++ s2).
-Proof. by apply: perm_eq_size; rewrite perm_merge. Qed.
-
 Lemma merge_uniq s1 s2 : uniq (merge s1 s2) = uniq (s1 ++ s2).
 Proof. by apply: perm_eq_uniq; rewrite perm_merge. Qed.
 
@@ -596,9 +584,6 @@ Qed.
 
 Lemma mem_sort s : sort s =i s.
 Proof. by apply: perm_eq_mem; rewrite perm_sort. Qed.
-
-Lemma size_sort s : size (sort s) = size s.
-Proof. by apply: perm_eq_size; rewrite perm_sort. Qed.
 
 Lemma sort_uniq s : uniq (sort s) = uniq s.
 Proof. by apply: perm_eq_uniq; rewrite perm_sort. Qed.
