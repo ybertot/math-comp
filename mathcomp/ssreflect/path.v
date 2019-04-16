@@ -380,11 +380,11 @@ End EqPath.
 
 (* Ordered paths and sorting. *)
 
-Section abstract_sort.
+Section SortSeq.
 
-Variable T : Type.
+Variables (T : Type) (leT : rel T).
 
-Variable leT : rel T.
+Hypothesis leT_total : total leT.
 
 Fixpoint merge s1 :=
   if s1 is x1 :: s1' then
@@ -412,31 +412,90 @@ Fixpoint merge_sort_rec ss s :=
 
 Definition sort := merge_sort_rec [::].
 
-End abstract_sort.
-
-Section SortSeq.
-
-Variable T : eqType.
-Variable leT : rel T.
-
-Local Notation merge := (merge leT).
-
-Local Notation merge_sort_push := (merge_sort_push leT).
-
-Local Notation merge_sort_pop := (merge_sort_pop leT).
-
-Local Notation merge_sort_rec := (merge_sort_rec leT).
-
-Local Notation sort := (sort leT).
-
 Definition sorted s := if s is x :: s' then path leT x s' else true.
 
 Lemma path_sorted x s : path leT x s -> sorted s.
 Proof. by case: s => //= y s /andP[]. Qed.
 
-Lemma path_min_sorted x s :
-  {in s, forall y, leT x y} -> path leT x s = sorted s.
-Proof. by case: s => //= y s -> //; apply: mem_head. Qed.
+Lemma merge_path x s1 s2 :
+  path leT x s1 -> path leT x s2 -> path leT x (merge s1 s2).
+Proof.
+elim: s1 s2 x => //= x1 s1 IHs1.
+elim=> //= x2 s2 IHs2 x /andP[le_x_x1 ord_s1] /andP[le_x_x2 ord_s2].
+case: ifP => le_x21 /=; first by rewrite le_x_x2 {}IHs2 // le_x21.
+by rewrite le_x_x1 IHs1 //=; have:= leT_total x2 x1; rewrite le_x21 /= => ->.
+Qed.
+
+Lemma merge_sorted s1 s2 : sorted s1 -> sorted s2 -> sorted (merge s1 s2).
+Proof.
+case: s1 s2 => [|x1 s1] [|x2 s2] //= ord_s1 ord_s2.
+case: ifP => le_x21 /=.
+  by apply: (@merge_path x2 (x1 :: s1)) => //=; rewrite le_x21.
+by apply: merge_path => //=; have:= leT_total x2 x1; rewrite le_x21 /= => ->.
+Qed.
+
+Lemma sort_sorted s : sorted (sort s).
+Proof.
+rewrite /sort; have allss: all sorted [::] by [].
+elim: {s}_.+1 {-2}s [::] allss (ltnSn (size s)) => // n IHn s ss allss.
+have: sorted s -> sorted (merge_sort_pop s ss).
+  elim: ss allss s => //= s2 ss IHss /andP[ord_s2 ord_ss] s ord_s.
+  exact: IHss ord_ss _ (merge_sorted ord_s ord_s2).
+case: s => [|x1 [|x2 s _]]; try by auto.
+move/ltnW/IHn; apply=> {n IHn s}; set s1 := if _ then _ else _.
+have: sorted s1 by apply: (@merge_sorted [::x2] [::x1]).
+elim: ss {x1 x2}s1 allss => /= [|s2 ss IHss] s1; first by rewrite andbT.
+case/andP=> ord_s2 ord_ss ord_s1.
+by case: {1}s2=> /= [|_ _]; [rewrite ord_s1 | apply: IHss (merge_sorted _ _)].
+Qed.
+
+Lemma size_merge s1 s2 : size (merge s1 s2) = size s1 + size s2.
+Proof.
+elim: s1 s2 => [// | ? ? IH1 /=]; elim => [// | ? ? IH2 /=].
+by case:ifP => [_ | _] /=; rewrite ?IH2 // IH1 /= !addnS addSn.
+Qed.
+
+Lemma size_merge_sort_pop ss s : size (merge_sort_pop s ss) =
+  foldl (fun n s' => n + (size s')) (size s) ss.
+Proof.
+by elim: ss s => [// | //= s2 ss' IH s]; rewrite //= IH size_merge.
+Qed.
+
+Lemma size_merge_sort_push k s1 ss : foldl (fun n s' => n + size s')
+      k (merge_sort_push s1 ss) =
+   foldl (fun n s' => n + (size s')) (k + size s1) ss.
+Proof.
+elim: ss s1 k => [ | s' ss' IH] s1 k //=.
+by case q : s' => [ | b s''] /=; rewrite ?addn0 // IH size_merge addnA.
+Qed.
+
+Lemma size_merge_sort_rec ss s : size (merge_sort_rec ss s) =
+    foldl (fun n s' => n + size s') (size s) ss.
+Proof.
+elim: {s}_.+1 {-2}s (ltnSn (size s)) ss => // n IHn s.
+case: s => [ | a [ | b s]] z ss; rewrite ?size_merge_sort_pop //.
+move: z; rewrite /= ltnS => z; have zn : size s < n by apply: ltn_trans z.
+rewrite IHn // size_merge_sort_push.
+by case: ifP => _ //=; rewrite !addnS !addn0.
+Qed.
+
+Lemma size_sort s: size (sort s) = size s.
+Proof. by rewrite /sort size_merge_sort_rec. Qed.
+
+End SortSeq.
+
+Section EqSortSeq.
+
+Variable T : eqType.
+Variable leT : rel T.
+
+Local Notation merge := (merge leT).
+Local Notation merge_sort_push := (merge_sort_push leT).
+Local Notation merge_sort_pop := (merge_sort_pop leT).
+Local Notation merge_sort_rec := (merge_sort_rec leT).
+Local Notation sort := (sort leT).
+Local Notation sorted := (sorted leT).
+Local Notation path_sorted := (@path_sorted _ leT).
 
 Section Transitive.
 
@@ -480,7 +539,7 @@ move=> leT_asym; elim=> [|x1 s1 IHs1] s2 //= ord_s1 ord_s2 eq_s12.
 have s2_x1: x1 \in s2 by rewrite -(perm_eq_mem eq_s12) mem_head.
 case: s2 s2_x1 eq_s12 ord_s2 => //= x2 s2; rewrite in_cons.
 case: eqP => [<- _| ne_x12 /= s2_x1] eq_s12 ord_s2.
-  by rewrite {IHs1}(IHs1 s2) ?(@path_sorted x1) // -(perm_cons x1).
+  by rewrite {IHs1}(IHs1 s2) ?(@path_sorted x1) // -(perm_cons x1). 
 case: (ne_x12); apply: leT_asym; rewrite (allP (order_path_min ord_s2)) //.
 have: x2 \in x1 :: s1 by rewrite (perm_eq_mem eq_s12) mem_head.
 case/predU1P=> [eq_x12 | s1_x2]; first by case ne_x12.
@@ -500,23 +559,6 @@ End Transitive.
 
 Hypothesis leT_total : total leT.
 
-Lemma merge_path x s1 s2 :
-  path leT x s1 -> path leT x s2 -> path leT x (merge s1 s2).
-Proof.
-elim: s1 s2 x => //= x1 s1 IHs1.
-elim=> //= x2 s2 IHs2 x /andP[le_x_x1 ord_s1] /andP[le_x_x2 ord_s2].
-case: ifP => le_x21 /=; first by rewrite le_x_x2 {}IHs2 // le_x21.
-by rewrite le_x_x1 IHs1 //=; have:= leT_total x2 x1; rewrite le_x21 /= => ->.
-Qed.
-
-Lemma merge_sorted s1 s2 : sorted s1 -> sorted s2 -> sorted (merge s1 s2).
-Proof.
-case: s1 s2 => [|x1 s1] [|x2 s2] //= ord_s1 ord_s2.
-case: ifP => le_x21 /=.
-  by apply: (@merge_path x2 (x1 :: s1)) => //=; rewrite le_x21.
-by apply: merge_path => //=; have:= leT_total x2 x1; rewrite le_x21 /= => ->.
-Qed.
-
 Lemma perm_merge s1 s2 : perm_eql (merge s1 s2) (s1 ++ s2).
 Proof.
 apply/perm_eqlP; rewrite perm_eq_sym; elim: s1 s2 => //= x1 s1 IHs1.
@@ -533,21 +575,6 @@ Proof. by apply: perm_eq_size; rewrite perm_merge. Qed.
 
 Lemma merge_uniq s1 s2 : uniq (merge s1 s2) = uniq (s1 ++ s2).
 Proof. by apply: perm_eq_uniq; rewrite perm_merge. Qed.
-
-Lemma sort_sorted s : sorted (sort s).
-Proof.
-rewrite /sort; have allss: all sorted [::] by [].
-elim: {s}_.+1 {-2}s [::] allss (ltnSn (size s)) => // n IHn s ss allss.
-have: sorted s -> sorted (merge_sort_pop s ss).
-  elim: ss allss s => //= s2 ss IHss /andP[ord_s2 ord_ss] s ord_s.
-  exact: IHss ord_ss _ (merge_sorted ord_s ord_s2).
-case: s => [|x1 [|x2 s _]]; try by auto.
-move/ltnW/IHn; apply=> {n IHn s}; set s1 := if _ then _ else _.
-have: sorted s1 by apply: (@merge_sorted [::x2] [::x1]).
-elim: ss {x1 x2}s1 allss => /= [|s2 ss IHss] s1; first by rewrite andbT.
-case/andP=> ord_s2 ord_ss ord_s1.
-by case: {1}s2=> /= [|_ _]; [rewrite ord_s1 | apply: IHss (merge_sorted _ _)].
-Qed.
 
 Lemma perm_sort s : perm_eql (sort s) s.
 Proof.
@@ -585,7 +612,7 @@ apply: eq_sorted; rewrite ?sort_sorted //.
 by rewrite perm_sort (perm_eqlP eq12) -perm_sort.
 Qed.
 
-End SortSeq.
+End EqSortSeq.
 
 Lemma rev_sorted (T : eqType) (leT : rel T) s :
   sorted leT (rev s) = sorted (fun y x => leT x y) s.
