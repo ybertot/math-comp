@@ -143,6 +143,7 @@ doc: __always__ Makefile.coq
 		-g --utf8 -R . mathcomp \
 		--parse-comments \
 		--multi-index $(COQFILES) -d htmldoc
+	cp -r ../etc/js _build_doc/htmldoc/
 	cp ../etc/artwork/coqdoc.css _build_doc/htmldoc
 
 doc-clean:
