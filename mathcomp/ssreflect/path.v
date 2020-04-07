@@ -530,6 +530,26 @@ elim=> //= [|y s2 IH2]; first by rewrite addn0.
 by case: leT; rewrite /= ?IH1 ?IH2 !addnS.
 Qed.
 
+(* For better algorithmic complexity, it is preferable that merge             *)
+(* is called on lists of practically equal size.  To achieve this result,     *)
+(* merge_sort_push builds a list of lists where the list at rank i has        *)
+(* size 2 ^(i + 1).  This is expressed in the following lemma, which          *)
+(* only serves a documentary purpose, but is not used anywhere else in        *)
+(* the development.                                                           *)
+
+Local Remark size_merge_sort_push s1 :
+  let graded ss := forall i, size (nth [::] ss i) \in pred2 0 (2 ^ (i + 1)) in
+  size s1 = 2 -> {homo merge_sort_push s1 : ss / graded ss}.
+Proof.
+set n := {2}1; rewrite -[RHS]/(2 ^ n) => graded sz_s1 ss.
+elim: ss => [|s2 ss IHss] in (n) graded s1 sz_s1 * => sz_ss i //=.
+  by case: i => [|[]] //; rewrite sz_s1 inE eqxx orbT.
+case: s2 i => [|x s2] [|i] //= in sz_ss *; first by rewrite sz_s1 inE eqxx orbT.
+  exact: (sz_ss i.+1).
+rewrite addSnnS; apply: IHss i => [|i]; last by rewrite -addSnnS (sz_ss i.+1).
+by rewrite size_merge size_cat sz_s1 (eqnP (sz_ss 0)) addnn expnS mul2n.
+Qed.
+
 Lemma order_path_min x s : transitive leT -> path leT x s -> all (leT x) s.
 Proof.
 move=> leT_tr; elim: s => //= y [//|z s] ihs /andP[xy yz]; rewrite xy {}ihs//.
